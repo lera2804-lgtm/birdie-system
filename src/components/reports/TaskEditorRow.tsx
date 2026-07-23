@@ -38,7 +38,7 @@ export const TaskEditorRow = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'grid', gridTemplateColumns: allowDeskType ? '160px 1fr' : '1fr', gap: 10 }}>
           <SysSelectField
-            label="Подпроект"
+            label="Проект"
             value={task.subproject}
             onChange={(e: any) => onChange({ subproject: e.target.value })}
             options={SUBPROJECTS.map((s) => ({ value: s.code, label: s.code }))}

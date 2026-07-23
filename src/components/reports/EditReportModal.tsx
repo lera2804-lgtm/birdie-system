@@ -5,10 +5,12 @@ import { SYS } from '../../theme/tokens';
 import { formatLong, type DayReport } from '../../mocks/reports';
 import { useReports } from '../../state/ReportsContext';
 import { ReportEditorBody } from './ReportEditorBody';
-import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { ConfirmModal } from '../ConfirmModal';
+import { useToasts } from '../../state/ToastContext';
 
 export const EditReportModal = ({ date, report, onClose }: { date: string; report: DayReport; onClose: () => void }) => {
   const { saveReport } = useReports();
+  const { addToast } = useToasts();
   const [draft, setDraft] = useState<DayReport>(() => ({ ...report }));
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -16,6 +18,7 @@ export const EditReportModal = ({ date, report, onClose }: { date: string; repor
     const now = new Date();
     const stamp = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')} в ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     saveReport(date, draft, `✎ отредактировано ПМ ${stamp}`);
+    addToast('success', 'Отчёт дня обновлён — изменения уже видны клиенту.');
     onClose();
   };
 
@@ -54,7 +57,7 @@ export const EditReportModal = ({ date, report, onClose }: { date: string; repor
       </SysModal>
 
       {deletingTask && (
-        <ConfirmDeleteModal
+        <ConfirmModal
           title="Удалить задачу?"
           message={`«${deletingTask.title || 'Без названия'}» и все прикреплённые к ней фото будут удалены. Действие необратимо.`}
           onCancel={() => setDeletingId(null)}

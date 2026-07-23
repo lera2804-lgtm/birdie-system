@@ -5,21 +5,28 @@ import { SYS } from '../../theme/tokens';
 import { formatShort, type DayReport } from '../../mocks/reports';
 import { useReports } from '../../state/ReportsContext';
 import { ReportEditorBody } from './ReportEditorBody';
-import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { ConfirmModal } from '../ConfirmModal';
+import { OfflineBanner } from '../OfflineBanner';
+import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { useToasts } from '../../state/ToastContext';
 
 export const EditReportMobileView = ({ date, report, onClose }: { date: string; report: DayReport; onClose: () => void }) => {
   const { saveReport } = useReports();
+  const { addToast } = useToasts();
+  const online = useOnlineStatus();
   const [draft, setDraft] = useState<DayReport>(() => ({ ...report }));
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const deletingTask = draft.tasks.find((t) => t.id === deletingId);
 
   const save = () => {
     saveReport(date, draft);
+    addToast('success', 'Изменения сохранены.');
     onClose();
   };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 150, background: SYS.paper, color: SYS.ink, display: 'flex', flexDirection: 'column' }}>
+      {!online && <OfflineBanner />}
       <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span onClick={onClose} style={{ fontSize: 18, color: SYS.muted, cursor: 'pointer' }}>←</span>
         <div style={{ textAlign: 'center' }}>
@@ -52,7 +59,7 @@ export const EditReportMobileView = ({ date, report, onClose }: { date: string; 
       </div>
 
       {deletingTask && (
-        <ConfirmDeleteModal
+        <ConfirmModal
           title="Удалить задачу?"
           message={`«${deletingTask.title || 'Без названия'}» и все прикреплённые к ней фото будут удалены. Действие необратимо.`}
           onCancel={() => setDeletingId(null)}

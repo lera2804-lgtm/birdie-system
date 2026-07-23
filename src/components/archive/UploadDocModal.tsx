@@ -4,11 +4,13 @@ import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
 import { ALLOWED_DOC_EXTENSIONS, MAX_UPLOAD_MB, type ArchiveFile, type KeyFileStatus } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
+import { useToasts } from '../../state/ToastContext';
 
 type UploadState = 'idle' | 'progress' | 'done' | 'error';
 
 export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
   const { addFile } = useArchive();
+  const { addToast } = useToasts();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadState, setUploadState] = useState<UploadState>('idle');
   const [fileName, setFileName] = useState('');
@@ -63,6 +65,7 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
       driveUrl: driveUrl.trim() || undefined,
     };
     addFile(file);
+    addToast('success', `«${file.name}» добавлен в архив.`);
     onClose();
   };
 

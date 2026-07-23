@@ -4,9 +4,11 @@ import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
 import type { MediaItem, MediaKind } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
+import { useToasts } from '../../state/ToastContext';
 
 export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
   const { addMedia } = useArchive();
+  const { addToast } = useToasts();
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState('');
   const [kind, setKind] = useState<MediaKind>('Video');
@@ -27,6 +29,7 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
       driveUrl: driveUrl.trim() || undefined,
     };
     addMedia(media);
+    addToast('success', `«${media.name}» добавлен в мультимедиа.`);
     onClose();
   };
 

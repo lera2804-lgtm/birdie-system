@@ -39,7 +39,7 @@ export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; ca
         </>
       ) : (
         <div style={{ border: `1px dashed ${SYS.line}`, padding: '18px 20px', fontSize: 12.5, color: SYS.muted }}>
-          Сроки ещё не заданы — укажите даты старта и сдачи в редактировании подпроекта.
+          Сроки ещё не заданы — укажите даты старта и сдачи в редактировании проекта.
         </div>
       )}
     </div>

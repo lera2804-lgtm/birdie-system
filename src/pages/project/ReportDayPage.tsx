@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MonoLabel, Pill } from '../../components/primitives';
 import { SysButton } from '../../components/form';
+import { PageHeader } from '../../components/PageHeader';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useReports } from '../../state/ReportsContext';
@@ -84,31 +85,31 @@ export const ReportDayPage = () => {
         })}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28, paddingBottom: 20, borderBottom: `1px solid ${SYS.line}` }}>
-        <div>
-          <MonoLabel color={SYS.red}>отчёт дня · {weekdayName}</MonoLabel>
-          <h1 style={{ margin: '10px 0 0', fontSize: 40, fontWeight: 500, letterSpacing: '-0.01em' }}>{formatLong(day)}</h1>
-          <div style={{ marginTop: 8, fontSize: 13, color: SYS.muted, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span>{PROJECT_INFO[projectCode].code} · {report ? `${groups.length} подпроект${groups.length === 1 ? '' : 'а'} в работе сегодня` : 'нет отчёта за этот день'}</span>
+      <PageHeader
+        kicker={`отчёт дня · ${weekdayName}`}
+        title={formatLong(day)}
+        meta={
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span>{PROJECT_INFO[projectCode].code} · {report ? `${groups.length} ${pluralProject(groups.length)} в работе сегодня` : 'нет отчёта за этот день'}</span>
             {report?.editedByPM && user.role !== 'client' && (
               <>
-                <span style={{ width: 4, height: 4, borderRadius: '50%', background: SYS.line }} />
+                <span style={{ width: 4, height: 4, borderRadius: '50%', background: SYS.line, flex: 'none' }} />
                 <span style={{ color: SYS.ink2 }}>{report.editedByPM}</span>
               </>
             )}
-          </div>
-        </div>
-        {report && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          </span>
+        }
+        right={report && (
+          <>
             <div style={{ display: 'flex', border: `1px solid ${SYS.line}`, background: SYS.paper }}>
               <div style={{ padding: '14px 22px' }}><MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>задач</MonoLabel><div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 500 }}>{totalTasks}</div></div>
               <div style={{ padding: '14px 22px', borderLeft: `1px solid ${SYS.line}` }}><MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>фото</MonoLabel><div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 500 }}>{totalPhotos}</div></div>
               <div style={{ padding: '14px 22px', borderLeft: `1px solid ${SYS.line}` }}><MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>человек</MonoLabel><div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 500 }}>{totalPeople}</div></div>
             </div>
             {canEdit && <SysButton tone="ghost" full={false} small type="button" onClick={() => setEditing(true)}>✎ Изменить</SysButton>}
-          </div>
+          </>
         )}
-      </div>
+      />
 
       {!report ? (
         <section style={{ border: `1px dashed ${SYS.line}`, background: SYS.paper, padding: '64px 40px', textAlign: 'center' }}>
@@ -128,7 +129,7 @@ export const ReportDayPage = () => {
                     <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>{sp.code}</MonoLabel>
                     <div style={{ marginTop: 4, fontSize: 16, fontWeight: 500 }}>{sp.title}</div>
                   </div>
-                  <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{sp.dayNum}-й день подпроекта</MonoLabel>
+                  <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{sp.dayNum}-й день проекта</MonoLabel>
                 </div>
                 <div style={{ padding: '0 24px 4px' }}>
                   {tasks.map((t, i) => (
@@ -175,3 +176,11 @@ export const ReportDayPage = () => {
     </main>
   );
 };
+
+function pluralProject(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'проект';
+  if ([2, 3, 4].includes(mod10) && ![12, 13, 14].includes(mod100)) return 'проекта';
+  return 'проектов';
+}

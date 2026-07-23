@@ -135,12 +135,12 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
     <SysModal width={680} onClose={commitAndClose}>
       <div style={{ padding: '28px 32px 24px', borderBottom: `1px solid ${SYS.line}` }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>редактирование подпроекта</MonoLabel>
+          <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>редактирование проекта</MonoLabel>
           <span onClick={commitAndClose} style={{ fontSize: 18, color: SYS.muted, cursor: 'pointer' }}>✕</span>
         </div>
         <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '180px 1fr', gap: 14 }}>
-          <SysLabeledField label="Код подпроекта" value={draft.code} onChange={(e: any) => setDraft((d) => ({ ...d, code: e.target.value }))} />
-          <SysLabeledField label="Название подпроекта" value={draft.title} onChange={(e: any) => setDraft((d) => ({ ...d, title: e.target.value }))} />
+          <SysLabeledField label="Код проекта" value={draft.code} onChange={(e: any) => setDraft((d) => ({ ...d, code: e.target.value }))} />
+          <SysLabeledField label="Название проекта" value={draft.title} onChange={(e: any) => setDraft((d) => ({ ...d, title: e.target.value }))} />
         </div>
       </div>
 
@@ -152,7 +152,7 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
 
         <div>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-            <MonoLabel color={SYS.ink} style={{ fontSize: 10 }}>общая готовность подпроекта</MonoLabel>
+            <MonoLabel color={SYS.ink} style={{ fontSize: 10 }}>общая готовность проекта</MonoLabel>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 500, color: SYS.red }}>{draft.readiness ?? 0}%</div>
           </div>
           <input

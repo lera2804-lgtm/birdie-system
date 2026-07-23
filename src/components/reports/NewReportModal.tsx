@@ -4,11 +4,13 @@ import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
 import { formatLong, makeTemplateReport, type DayReport } from '../../mocks/reports';
 import { useReports } from '../../state/ReportsContext';
+import { useToasts } from '../../state/ToastContext';
 import { ReportEditorBody } from './ReportEditorBody';
-import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { ConfirmModal } from '../ConfirmModal';
 
 export const NewReportModal = ({ date, onClose }: { date: string; onClose: () => void }) => {
   const { saveReport } = useReports();
+  const { addToast } = useToasts();
   const [draft, setDraft] = useState<DayReport>(() => ({ ...makeTemplateReport(date), tasks: [], frontOffice: [{ id: 'o1', qty: '', role: '' }], backOffice: [{ id: 'o2', qty: '', role: '' }], milestone: '' }));
   const [attempted, setAttempted] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -19,6 +21,7 @@ export const NewReportModal = ({ date, onClose }: { date: string; onClose: () =>
   const publish = () => {
     if (invalidIds.size > 0) { setAttempted(true); return; }
     saveReport(date, draft);
+    addToast('success', `Отчёт за ${formatLong(date)} опубликован — клиент уже видит его.`);
     onClose();
   };
   const saveDraft = () => {
@@ -66,7 +69,7 @@ export const NewReportModal = ({ date, onClose }: { date: string; onClose: () =>
       </SysModal>
 
       {deletingTask && (
-        <ConfirmDeleteModal
+        <ConfirmModal
           title="Удалить задачу?"
           message={`«${deletingTask.title || 'Без названия'}» и все прикреплённые к ней фото будут удалены. Действие необратимо.`}
           onCancel={() => setDeletingId(null)}

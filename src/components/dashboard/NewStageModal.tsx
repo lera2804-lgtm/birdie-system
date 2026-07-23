@@ -104,12 +104,12 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
     <SysModal width={680} onClose={onClose}>
       <div style={{ padding: '28px 32px 24px', borderBottom: `1px solid ${SYS.line}` }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <MonoLabel color={SYS.red}>{projectCode} · новый подпроект</MonoLabel>
+          <MonoLabel color={SYS.red}>{projectCode} · новый проект</MonoLabel>
           <span onClick={onClose} style={{ fontSize: 18, color: SYS.muted, cursor: 'pointer' }}>✕</span>
         </div>
         <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: '180px 1fr', gap: 14 }}>
-          <SysLabeledField label="Код подпроекта" placeholder={`напр. ${projectCode}/8`} value={code} onChange={(e: any) => setCode(e.target.value)} />
-          <SysLabeledField label="Название подпроекта" placeholder="напр. Устройство дренажной системы" value={title} onChange={(e: any) => setTitle(e.target.value)} />
+          <SysLabeledField label="Код проекта" placeholder={`напр. ${projectCode}/8`} value={code} onChange={(e: any) => setCode(e.target.value)} />
+          <SysLabeledField label="Название проекта" placeholder="напр. Устройство дренажной системы" value={title} onChange={(e: any) => setTitle(e.target.value)} />
         </div>
       </div>
 
@@ -145,7 +145,7 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" disabled={!canSubmit} onClick={submit}>Создать подпроект</SysButton>
+          <SysButton type="button" disabled={!canSubmit} onClick={submit}>Создать проект</SysButton>
         </div>
       </div>
     </SysModal>

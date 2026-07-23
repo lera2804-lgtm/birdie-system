@@ -6,6 +6,7 @@ import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { CATALOG_HEADING, projectsForRole, type CatalogProject } from '../../mocks/catalog';
+import { useArchivedObjects } from '../../state/ArchivedObjectsContext';
 import { NewProjectModal } from './NewProjectModal';
 
 const CatalogTopbar = () => {
@@ -103,6 +104,7 @@ const CatalogCardMobile = ({ p }: { p: CatalogProject }) => {
 export const CatalogPage = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { archivedCodes } = useArchivedObjects();
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [projects, setProjects] = useState<CatalogProject[]>([]);
@@ -111,11 +113,12 @@ export const CatalogPage = () => {
     if (!user) return;
     setLoading(true);
     const t = setTimeout(() => {
-      setProjects(projectsForRole(user.role));
+      setProjects(projectsForRole(user.role).filter((p) => !archivedCodes.has(p.code)));
       setLoading(false);
     }, 500);
     return () => clearTimeout(t);
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, archivedCodes]);
 
   if (!user) return null;
   const heading = CATALOG_HEADING[user.role];

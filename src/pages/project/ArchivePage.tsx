@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { MonoLabel, PhotoPlaceholder } from '../../components/primitives';
 import { SysButton } from '../../components/form';
+import { PageHeader } from '../../components/PageHeader';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useArchive } from '../../state/ArchiveContext';
 import type { ArchiveFile } from '../../mocks/archive';
 import { UploadDocModal } from '../../components/archive/UploadDocModal';
 import { UploadMediaModal } from '../../components/archive/UploadMediaModal';
-import { ConfirmDeleteModal } from '../../components/reports/ConfirmDeleteModal';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 const ARCH_COLS = '48px 64px 1fr 130px 110px 110px 110px 150px';
 const PAGE_SIZE = 15;
@@ -59,33 +60,25 @@ export const ArchivePage = () => {
 
   return (
     <main style={{ padding: '36px 56px 56px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 26 }}>
-        <MonoLabel color={SYS.red}>документы</MonoLabel>
-        <span style={{ flex: 1, height: 1, background: SYS.line }} />
-        <MonoLabel color={SYS.muted}>все версии файлов</MonoLabel>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 40, marginBottom: 44, flexWrap: 'wrap' }}>
-        <div style={{ maxWidth: 640 }}>
-          <h1 style={{ margin: 0, fontSize: 52, fontWeight: 500, letterSpacing: '-0.015em', lineHeight: 1.02 }}>Архив материалов</h1>
-          <p style={{ marginTop: 20, fontSize: 15, lineHeight: 1.5, color: SYS.ink2 }}>
-            Здесь хранится каждая итерация проекта — концепции, чертежи, сметы и видео.
-            Файлы лежат на Яндекс.Диске компании; вы можете открыть их в облаке.
-          </p>
-        </div>
-        <div style={{ display: 'flex', border: `1px solid ${SYS.line}`, background: SYS.paper, borderBottom: `3px solid ${SYS.line}` }}>
-          {[
-            ['Всего', String(allFiles.length).padStart(2, '0')],
-            ['Утверждённые', String(keyFiles.length)],
-            ['Видео', String(media.filter((m) => m.kind === 'Video').length)],
-          ].map(([l, v], i, arr) => (
-            <div key={l} style={{ padding: '16px 28px 18px', borderRight: i < arr.length - 1 ? `1px solid ${SYS.line}` : 'none' }}>
-              <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{l}</MonoLabel>
-              <div style={{ marginTop: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 40, fontWeight: 500, letterSpacing: '-0.02em', textAlign: 'center' }}>{v}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        kicker="документы · все версии файлов"
+        title="Архив материалов"
+        meta="Здесь хранится каждая итерация проекта — концепции, чертежи, сметы и видео. Файлы лежат на Яндекс.Диске компании; вы можете открыть их в облаке."
+        right={
+          <div style={{ display: 'flex', border: `1px solid ${SYS.line}`, background: SYS.paper }}>
+            {[
+              ['Всего', String(allFiles.length).padStart(2, '0')],
+              ['Утверждённые', String(keyFiles.length)],
+              ['Видео', String(media.filter((m) => m.kind === 'Video').length)],
+            ].map(([l, v], i, arr) => (
+              <div key={l} style={{ padding: '14px 22px', borderRight: i < arr.length - 1 ? `1px solid ${SYS.line}` : 'none' }}>
+                <MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>{l}</MonoLabel>
+                <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 26, fontWeight: 500, textAlign: 'center' }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        }
+      />
 
       {isEmpty ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
@@ -225,7 +218,7 @@ export const ArchivePage = () => {
       {uploadingDoc && <UploadDocModal onClose={() => setUploadingDoc(false)} />}
       {uploadingMedia && <UploadMediaModal onClose={() => setUploadingMedia(false)} />}
       {deletingFile && (
-        <ConfirmDeleteModal
+        <ConfirmModal
           title="Удалить файл?"
           message={`«${deletingFile.name}» будет удалён из архива без возможности восстановления.`}
           onCancel={() => setDeletingFile(null)}

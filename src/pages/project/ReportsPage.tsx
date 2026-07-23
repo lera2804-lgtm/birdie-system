@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MonoLabel } from '../../components/primitives';
 import { SysButton } from '../../components/form';
+import { PageHeader } from '../../components/PageHeader';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useReports } from '../../state/ReportsContext';
@@ -34,30 +35,28 @@ export const ReportsPage = () => {
 
   return (
     <main style={{ padding: '36px 56px 56px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24, paddingBottom: 20, borderBottom: `1px solid ${SYS.line}` }}>
-        <div>
-          <MonoLabel color={SYS.red}>отчёты · хронология стройки</MonoLabel>
-          <h1 style={{ margin: '10px 0 0', fontSize: 40, fontWeight: 500, letterSpacing: '-0.01em' }}>{label.nominative}</h1>
-          <div style={{ marginTop: 8, fontSize: 13, color: SYS.muted }}>
-            {PROJECT_INFO[projectCode].code} · {isEmpty ? 'нет отчётов' : `${reportedCount} отчётных ${pluralDay(reportedCount)}`}
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            type="button"
-            onClick={() => navigate(`/${projectCode}/reports/${shiftMonth(month, -1)}`)}
-            style={{ width: 40, height: 40, background: SYS.paper, color: SYS.ink, border: `1px solid ${SYS.line}`, cursor: 'pointer', fontSize: 15 }}
-          >←</button>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: SYS.muted, letterSpacing: '0.1em', minWidth: 80, textAlign: 'center' }}>
-            <span style={{ color: SYS.ink }}>{label.genitive.toUpperCase()}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(`/${projectCode}/reports/${shiftMonth(month, 1)}`)}
-            style={{ width: 40, height: 40, background: SYS.paper, color: SYS.ink, border: `1px solid ${SYS.line}`, cursor: 'pointer', fontSize: 15 }}
-          >→</button>
-        </div>
-      </div>
+      <PageHeader
+        kicker="отчёты · хронологию реализации"
+        title={label.nominative}
+        meta={`${PROJECT_INFO[projectCode].code} · ${isEmpty ? 'нет отчётов' : `${reportedCount} отчётных ${pluralDay(reportedCount)}`}`}
+        right={
+          <>
+            <button
+              type="button"
+              onClick={() => navigate(`/${projectCode}/reports/${shiftMonth(month, -1)}`)}
+              style={{ width: 40, height: 40, background: SYS.paper, color: SYS.ink, border: `1px solid ${SYS.line}`, cursor: 'pointer', fontSize: 15 }}
+            >←</button>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: SYS.muted, letterSpacing: '0.1em', minWidth: 80, textAlign: 'center' }}>
+              <span style={{ color: SYS.ink }}>{label.monthOnly.toUpperCase()}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`/${projectCode}/reports/${shiftMonth(month, 1)}`)}
+              style={{ width: 40, height: 40, background: SYS.paper, color: SYS.ink, border: `1px solid ${SYS.line}`, cursor: 'pointer', fontSize: 15 }}
+            >→</button>
+          </>
+        }
+      />
 
       <section style={{ background: SYS.paper, border: `1px solid ${SYS.line}`, marginBottom: 28 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: `1px solid ${SYS.line}` }}>

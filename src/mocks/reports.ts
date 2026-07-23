@@ -17,7 +17,7 @@ export const monthLabel = (month: string) => {
   const [y, m] = month.split('-').map(Number);
   const genitive = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
   const nominative = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-  return { nominative: `${nominative[m - 1]} ${y}`, genitive: genitive[m - 1] };
+  return { nominative: `${nominative[m - 1]} ${y}`, monthOnly: nominative[m - 1], genitive: genitive[m - 1] };
 };
 
 export const shiftMonth = (month: string, delta: number) => {

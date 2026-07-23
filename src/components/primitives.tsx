@@ -1,33 +1,19 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { FONT_MONO, FONT_SANS, ROLE_META, SYS, type Role } from '../theme/tokens';
+import { FONT_MONO, ROLE_META, SYS, type Role } from '../theme/tokens';
+
+// Cropped from the official brand file (project/assets/logo-orlov-red.png,
+// wordmark row only) — see project/directions/sys-shared.jsx OrlovMark for
+// the mock's text-based approximation this replaces.
+const LOGO_ASPECT = 1731 / 136;
 
 export const OrlovMark = ({ inverse, size = 14 }: { inverse?: boolean; size?: number }) => {
-  const ink = inverse ? '#f5f4f0' : '#0a0a0a';
+  const height = size * 1.5;
   return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: size * 0.55,
-        fontFamily: FONT_SANS,
-        fontWeight: 600,
-        fontSize: size,
-        letterSpacing: '0.32em',
-        color: ink,
-      }}
-    >
-      <span>ORLOV</span>
-      <span
-        style={{
-          display: 'inline-block',
-          width: size * 0.42,
-          height: size * 0.42,
-          borderRadius: '50%',
-          background: '#e63818',
-        }}
-      />
-      <span style={{ color: '#e63818' }}>RED</span>
-    </div>
+    <img
+      src={inverse ? '/assets/logo-orlov-red-mark-inverse.png' : '/assets/logo-orlov-red-mark.png'}
+      alt="ORLOV · RED"
+      style={{ display: 'block', height, width: height * LOGO_ASPECT }}
+    />
   );
 };
 

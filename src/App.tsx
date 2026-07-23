@@ -11,9 +11,12 @@ import { DashboardPage } from './pages/project/DashboardPage';
 import { ReportsSection } from './pages/project/ReportsSection';
 import { ReportDaySection } from './pages/project/ReportDaySection';
 import { ArchivePage } from './pages/project/ArchivePage';
-import { PlaceholderSection } from './pages/project/PlaceholderSection';
+import { SettingsPage } from './pages/project/SettingsPage';
 import { NotFoundPage } from './pages/system/NotFoundPage';
 import { REPORT_MONTH } from './mocks/reports';
+import { ArchivedObjectsProvider } from './state/ArchivedObjectsContext';
+import { ToastProvider } from './state/ToastContext';
+import { ToastStack } from './components/ToastStack';
 
 const ReportsIndexRedirect = () => {
   const { projectCode } = useParams();
@@ -23,27 +26,32 @@ const ReportsIndexRedirect = () => {
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/invite/:token" element={<InvitePage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-sent" element={<ResetSentPage />} />
+      <ToastProvider>
+        <ArchivedObjectsProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/invite/:token" element={<InvitePage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-sent" element={<ResetSentPage />} />
 
-        <Route path="/" element={<RequireAuth><CatalogPage /></RequireAuth>} />
+            <Route path="/" element={<RequireAuth><CatalogPage /></RequireAuth>} />
 
-        <Route path="/:projectCode" element={<RequireAuth><ProjectShell /></RequireAuth>}>
-          <Route index element={<ProjectIndexRedirect />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="reports" element={<ReportsIndexRedirect />} />
-          <Route path="reports/:month" element={<ReportsSection />} />
-          <Route path="reports/:month/:day" element={<ReportDaySection />} />
-          <Route path="archive" element={<ArchivePage />} />
-          <Route path="settings" element={<PlaceholderSection title="Настройки" />} />
-        </Route>
+            <Route path="/:projectCode" element={<RequireAuth><ProjectShell /></RequireAuth>}>
+              <Route index element={<ProjectIndexRedirect />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="reports" element={<ReportsIndexRedirect />} />
+              <Route path="reports/:month" element={<ReportsSection />} />
+              <Route path="reports/:month/:day" element={<ReportDaySection />} />
+              <Route path="archive" element={<ArchivePage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
 
-        <Route path="/404" element={<NotFoundPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+            <Route path="/404" element={<NotFoundPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+          <ToastStack />
+        </ArchivedObjectsProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }

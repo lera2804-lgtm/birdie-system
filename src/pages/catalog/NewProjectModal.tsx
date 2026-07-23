@@ -3,6 +3,7 @@ import { SysButton, SysLabeledField, SysModal } from '../../components/form';
 import { MonoLabel, Pill, RoleBadge } from '../../components/primitives';
 import { SYS, type Role } from '../../theme/tokens';
 import type { CatalogProject } from '../../mocks/catalog';
+import { useToasts } from '../../state/ToastContext';
 
 interface Person {
   email: string;
@@ -10,7 +11,7 @@ interface Person {
 }
 
 const ROLE_GROUPS_INITIAL: { role: Role; hint: string; people: Person[] }[] = [
-  { role: 'project_manager', hint: 'управляет подпроектами и составом работ', people: [{ email: 'a.chernyshev@orlov.red', sent: true }] },
+  { role: 'project_manager', hint: 'управляет проектами и составом работ', people: [{ email: 'a.chernyshev@orlov.red', sent: true }] },
   { role: 'site_manager', hint: 'ведёт отчёты с площадки', people: [{ email: '' }] },
   { role: 'client', hint: 'только просмотр', people: [{ email: '' }] },
 ];
@@ -42,6 +43,7 @@ const AssignRoleRow = ({
 );
 
 export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; onCreate: (p: CatalogProject) => void }) => {
+  const { addToast } = useToasts();
   const [title, setTitle] = useState('');
   const [address, setAddress] = useState('');
   const [cadastre, setCadastre] = useState('');
@@ -78,6 +80,7 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
     if (!canSubmit) return;
     const code = title.trim().toUpperCase().replace(/\s+/g, '-');
     onCreate({ code, title: title.trim(), address: address.trim(), cover: coverUrl ?? undefined });
+    addToast('success', `Объект «${title.trim()}» создан.`);
   };
 
   return (
