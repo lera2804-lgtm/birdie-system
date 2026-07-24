@@ -4,23 +4,19 @@ import { useRef } from 'react';
 import { MonoLabel, RoleBadge } from '../../components/primitives';
 import { SysButton, SysLabeledField } from '../../components/form';
 import { PageHeader } from '../../components/PageHeader';
+import { SectionHead } from '../../components/SectionHead';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
-import { seedMembers, seedProjectDetails, type Member, type ProjectDetails } from '../../mocks/settings';
+import { seedMembers, type Member, type ProjectDetails } from '../../mocks/settings';
 import { useArchivedObjects } from '../../state/ArchivedObjectsContext';
+import { useProjectDetails } from '../../state/ProjectDetailsContext';
 import { useToasts } from '../../state/ToastContext';
 import { InviteMemberModal } from '../../components/settings/InviteMemberModal';
 
 const SettingsCard = ({ title, sub, children, action }: { title: string; sub?: string; children: React.ReactNode; action?: React.ReactNode }) => (
   <section style={{ border: `1px solid ${SYS.line}`, marginBottom: 24, background: SYS.paper }}>
-    <div style={{ padding: '20px 24px', borderBottom: `1px solid ${SYS.line}`, background: SYS.bg, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-      <div>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 500, letterSpacing: '-0.006em' }}>{title}</h2>
-        {sub && <div style={{ marginTop: 5, fontSize: 12.5, color: SYS.muted }}>{sub}</div>}
-      </div>
-      {action}
-    </div>
+    <SectionHead title={title} sub={sub} action={action} />
     {children}
   </section>
 );
@@ -51,10 +47,11 @@ export const SettingsPage = () => {
   const { projectCode } = useParams();
   const navigate = useNavigate();
   const { archiveProject } = useArchivedObjects();
+  const { details: savedDetails, setDetails: commitDetails } = useProjectDetails();
   const { addToast } = useToasts();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [details, setDetails] = useState<ProjectDetails>(() => seedProjectDetails(projectCode!));
+  const [details, setDetails] = useState<ProjectDetails>(savedDetails);
   const [members, setMembers] = useState<Member[]>(() => seedMembers());
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -73,6 +70,7 @@ export const SettingsPage = () => {
   };
 
   const save = () => {
+    commitDetails(details);
     setDirty(false);
     setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
     addToast('success', 'Настройки объекта сохранены.');

@@ -78,7 +78,11 @@ export const ReportDayMobilePage = () => {
 
             <div style={{ marginTop: 4 }}>
               <MonoLabel color={SYS.ink} style={{ fontSize: 10, display: 'block', marginBottom: 10 }}>занятые люди в этот день</MonoLabel>
-              <div style={{ fontSize: 13 }}>{report.frontOffice.map((r) => `${r.qty} чел. · ${r.role}`).join('; ') || '—'}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13 }}>
+                {report.frontOffice.length > 0
+                  ? report.frontOffice.map((r, i) => <div key={i}>{r.qty} чел. · {r.role}</div>)
+                  : '—'}
+              </div>
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { SysButton, SysLabeledField, SysModal, SysSelectField } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import type { MediaItem, MediaKind } from '../../mocks/archive';
+import { toShortDate, type MediaItem, type MediaKind } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
 import { useToasts } from '../../state/ToastContext';
 
@@ -16,8 +16,9 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
   const [album, setAlbum] = useState('');
   const [variant, setVariant] = useState('');
   const [driveUrl, setDriveUrl] = useState('');
+  const [createdDate, setCreatedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  const canSubmit = title.trim();
+  const canSubmit = title.trim() && createdDate.trim();
 
   const submit = () => {
     if (!canSubmit) return;
@@ -25,7 +26,7 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
       id: `m${Date.now()}`,
       kind,
       name: `${title.trim()}${album ? ` ${album}` : ''}${variant ? ` / ${variant}` : ''}`,
-      date: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }),
+      date: toShortDate(createdDate),
       driveUrl: driveUrl.trim() || undefined,
     };
     addMedia(media);
@@ -72,6 +73,7 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
           <SysLabeledField label="Вариант" placeholder="напр. V5" value={variant} onChange={(e: any) => setVariant(e.target.value)} />
         </div>
         <SysLabeledField label="Ссылка на диск (опционально)" placeholder="https://disk.yandex.ru/…" hint="если указана — откроется кнопкой «Посмотреть»" value={driveUrl} onChange={(e: any) => setDriveUrl(e.target.value)} />
+        <SysLabeledField label="Дата создания материала" type="date" value={createdDate} onChange={(e: any) => setCreatedDate(e.target.value)} />
       </div>
 
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>

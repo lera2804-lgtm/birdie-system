@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { SysButton, SysLabeledField, SysModal, SysSelectField } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { ALLOWED_DOC_EXTENSIONS, MAX_UPLOAD_MB, type ArchiveFile, type KeyFileStatus } from '../../mocks/archive';
+import { ALLOWED_DOC_EXTENSIONS, MAX_UPLOAD_MB, toShortDate, type ArchiveFile, type KeyFileStatus } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
 import { useToasts } from '../../state/ToastContext';
 
@@ -21,6 +21,7 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
   const [title, setTitle] = useState('');
   const [album, setAlbum] = useState('');
   const [variant, setVariant] = useState('');
+  const [createdDate, setCreatedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [driveUrl, setDriveUrl] = useState('');
   const [visible, setVisible] = useState(true);
   const [isKey, setIsKey] = useState(false);
@@ -48,7 +49,7 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
     }, 150);
   };
 
-  const canSubmit = title.trim() && (uploadState === 'done' || driveUrl.trim());
+  const canSubmit = title.trim() && createdDate.trim() && (uploadState === 'done' || driveUrl.trim());
 
   const submit = () => {
     if (!canSubmit) return;
@@ -58,7 +59,7 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
       name: title.trim(),
       album: album.trim() || '—',
       variant: variant.trim() || '—',
-      created: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }),
+      created: toShortDate(createdDate),
       uploaded: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }),
       key: isKey,
       clientHidden: !visible,
@@ -123,6 +124,13 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
           <SysLabeledField label="Альбом / версия" placeholder="напр. 03" value={album} onChange={(e: any) => setAlbum(e.target.value)} />
           <SysLabeledField label="Вариант" placeholder="напр. V5" value={variant} onChange={(e: any) => setVariant(e.target.value)} />
         </div>
+        <SysLabeledField
+          label="Дата создания материала"
+          type="date"
+          hint="по этой дате файл встанет в общий список; дата загрузки проставляется автоматически"
+          value={createdDate}
+          onChange={(e: any) => setCreatedDate(e.target.value)}
+        />
         <SysLabeledField
           label="Ссылка на диск (опционально)"
           placeholder="https://disk.yandex.ru/…"

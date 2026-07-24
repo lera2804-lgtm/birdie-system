@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { MonoLabel, PhotoPlaceholder } from '../../components/primitives';
 import { SysButton } from '../../components/form';
 import { PageHeader } from '../../components/PageHeader';
+import { SectionHead } from '../../components/SectionHead';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useArchive } from '../../state/ArchiveContext';
-import type { ArchiveFile } from '../../mocks/archive';
+import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type MediaKind } from '../../mocks/archive';
 import { UploadDocModal } from '../../components/archive/UploadDocModal';
 import { UploadMediaModal } from '../../components/archive/UploadMediaModal';
 import { ConfirmModal } from '../../components/ConfirmModal';
@@ -13,14 +14,30 @@ import { ConfirmModal } from '../../components/ConfirmModal';
 const ARCH_COLS = '48px 64px 1fr 130px 110px 110px 110px 150px';
 const PAGE_SIZE = 15;
 
-const SectionHead = ({ title, count, action }: { title: string; count: string; action?: React.ReactNode }) => (
-  <div style={{ padding: '30px 28px', borderBottom: `1px solid ${SYS.line}`, background: SYS.bg, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-    <div>
-      <h2 style={{ margin: 0, fontSize: 30, fontWeight: 500, letterSpacing: '-0.01em' }}>{title}</h2>
-      <div style={{ marginTop: 8, fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.ink2 }}>{count}</div>
-    </div>
-    {action}
-  </div>
+type SortMode = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: 'date-desc', label: 'Сначала новые' },
+  { value: 'date-asc', label: 'Сначала старые' },
+  { value: 'name-asc', label: 'По названию А-Я' },
+  { value: 'name-desc', label: 'По названию Я-А' },
+];
+const sortFiles = (files: ArchiveFile[], mode: SortMode): ArchiveFile[] =>
+  [...files].sort((a, b) => {
+    switch (mode) {
+      case 'date-desc': return parseShortDate(b.created) - parseShortDate(a.created);
+      case 'date-asc': return parseShortDate(a.created) - parseShortDate(b.created);
+      case 'name-asc': return a.name.localeCompare(b.name, 'ru');
+      case 'name-desc': return b.name.localeCompare(a.name, 'ru');
+    }
+  });
+
+const EditableCell = ({ value, onChange, type, style }: { value: string; onChange: (v: string) => void; type?: 'text' | 'date'; style?: React.CSSProperties }) => (
+  <input
+    type={type || 'text'}
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', color: SYS.ink, padding: 0, width: '100%', ...style }}
+  />
 );
 
 const EmptySection = ({ icon, title, hint, cta }: { icon: string; title: string; hint: string; cta?: React.ReactNode }) => (
@@ -34,9 +51,10 @@ const EmptySection = ({ icon, title, hint, cta }: { icon: string; title: string;
 
 export const ArchivePage = () => {
   const { user } = useAuth();
-  const { keyFiles, allFiles, media, removeFile, toggleHidden, removeMedia } = useArchive();
+  const { keyFiles, allFiles, media, removeFile, updateFile, toggleHidden, updateMedia, removeMedia } = useArchive();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('Все типы');
+  const [sortMode, setSortMode] = useState<SortMode>('date-desc');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -47,12 +65,12 @@ export const ArchivePage = () => {
 
   const scopedFiles = canManage ? allFiles : allFiles.filter((f) => !f.clientHidden);
   const types = useMemo(() => ['Все типы', ...Array.from(new Set(scopedFiles.map((f) => f.type)))], [scopedFiles]);
-  const filtered = scopedFiles.filter((f) => {
+  const filtered = sortFiles(scopedFiles.filter((f) => {
     if (typeFilter !== 'Все типы' && f.type !== typeFilter) return false;
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
     return f.name.toLowerCase().includes(q) || f.album.toLowerCase().includes(q) || f.variant.toLowerCase().includes(q);
-  });
+  }), sortMode);
   const shown = filtered.slice(0, visibleCount);
   const hasMore = filtered.length > shown.length;
 
@@ -67,7 +85,7 @@ export const ArchivePage = () => {
         right={
           <div style={{ display: 'flex', border: `1px solid ${SYS.line}`, background: SYS.paper }}>
             {[
-              ['Всего', String(allFiles.length).padStart(2, '0')],
+              ['Всего', String(allFiles.length)],
               ['Утверждённые', String(keyFiles.length)],
               ['Видео', String(media.filter((m) => m.kind === 'Video').length)],
             ].map(([l, v], i, arr) => (
@@ -100,9 +118,9 @@ export const ArchivePage = () => {
           {keyFiles.length > 0 && (
             <section style={{ border: `1px solid ${SYS.line}` }}>
               <SectionHead title="Ключевые файлы" count={`${keyFiles.length} файл`} />
-              {keyFiles.map((f) => (
+              {keyFiles.map((f, i) => (
                 <div key={f.id} style={{ display: 'grid', gridTemplateColumns: '56px 1fr 150px 170px 120px 150px', gap: 20, alignItems: 'center', padding: '22px 28px', background: SYS.paper }}>
-                  <MonoLabel color={SYS.red} style={{ fontSize: 12 }}>{f.id.slice(-2).toUpperCase()}</MonoLabel>
+                  <MonoLabel color={SYS.red} style={{ fontSize: 12 }}>{String(i + 1).padStart(2, '0')}</MonoLabel>
                   <div style={{ fontSize: 16, fontWeight: 500 }}>{f.name}</div>
                   <MonoLabel color={SYS.red} style={{ fontSize: 11 }}>{f.status}</MonoLabel>
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.ink2 }}>{f.album}</div>
@@ -138,6 +156,13 @@ export const ArchivePage = () => {
               >
                 {types.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
+              <select
+                value={sortMode}
+                onChange={(e) => { setSortMode(e.target.value as SortMode); setVisibleCount(PAGE_SIZE); }}
+                style={{ padding: '11px 14px', background: 'transparent', border: `1px solid ${SYS.line}`, color: SYS.ink, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}
+              >
+                {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: ARCH_COLS, gap: 18, padding: '14px 28px', background: SYS.paper, borderBottom: `1px solid ${SYS.line}` }}>
@@ -155,12 +180,33 @@ export const ArchivePage = () => {
                 <div style={{ width: 46, height: 46, background: SYS.bg, border: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: SYS.ink2 }}>{f.type}</div>
                 <div style={{ fontSize: 14.5, display: 'flex', alignItems: 'center', gap: 8 }}>
                   {f.key && <span title="ключевой файл" style={{ color: SYS.red, fontSize: 14 }}>★</span>}
-                  {f.name}
-                  {f.clientHidden && canManage && <span title="скрыт от заказчика" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: SYS.muted, border: `1px solid ${SYS.line}`, padding: '2px 6px' }}>⊘ скрыт</span>}
+                  {canManage ? (
+                    <EditableCell value={f.name} onChange={(v) => updateFile(f.id, { name: v })} style={{ fontSize: 14.5 }} />
+                  ) : (
+                    <span>{f.name}</span>
+                  )}
+                  {f.clientHidden && canManage && <span title="скрыт от заказчика" style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: SYS.muted, border: `1px solid ${SYS.line}`, padding: '2px 6px', flex: 'none' }}>⊘ скрыт</span>}
                 </div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14 }}>{f.album}</div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: SYS.ink2 }}>{f.variant}</div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.ink2 }}>{f.created}</div>
+                {canManage ? (
+                  <EditableCell value={f.album} onChange={(v) => updateFile(f.id, { album: v })} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14 }} />
+                ) : (
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14 }}>{f.album}</div>
+                )}
+                {canManage ? (
+                  <EditableCell value={f.variant} onChange={(v) => updateFile(f.id, { variant: v })} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: SYS.ink2 }} />
+                ) : (
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: SYS.ink2 }}>{f.variant}</div>
+                )}
+                {canManage ? (
+                  <EditableCell
+                    type="date"
+                    value={fromShortDate(f.created)}
+                    onChange={(v) => v && updateFile(f.id, { created: toShortDate(v) })}
+                    style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.ink2 }}
+                  />
+                ) : (
+                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.ink2 }}>{f.created}</div>
+                )}
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.muted }}>{f.uploaded}</div>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
                   {canManage && (
@@ -199,9 +245,36 @@ export const ArchivePage = () => {
                 {media.map((m) => (
                   <div key={m.id}>
                     <PhotoPlaceholder label={m.kind === 'AR tour' ? '⊹ 3D' : '▶'} height={220} />
-                    <div style={{ marginTop: 14, fontSize: 15 }}>{m.kind} / {m.name}</div>
+                    <div style={{ marginTop: 14, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {canManage ? (
+                        <>
+                          <select
+                            value={m.kind}
+                            onChange={(e) => updateMedia(m.id, { kind: e.target.value as MediaKind })}
+                            style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 15, color: SYS.ink, cursor: 'pointer', padding: 0, flex: 'none' }}
+                          >
+                            <option value="Video">Video</option>
+                            <option value="AR tour">AR tour</option>
+                            <option value="3D">3D</option>
+                          </select>
+                          <span style={{ color: SYS.muted, flex: 'none' }}>/</span>
+                          <EditableCell value={m.name} onChange={(v) => updateMedia(m.id, { name: v })} style={{ fontSize: 15 }} />
+                        </>
+                      ) : (
+                        <span>{m.kind} / {m.name}</span>
+                      )}
+                    </div>
                     <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14 }}>{m.date}</div>
+                      {canManage ? (
+                        <EditableCell
+                          type="date"
+                          value={fromShortDate(m.date)}
+                          onChange={(v) => v && updateMedia(m.id, { date: toShortDate(v) })}
+                          style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, width: 'auto' }}
+                        />
+                      ) : (
+                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14 }}>{m.date}</div>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <a href={m.driveUrl || undefined} target="_blank" rel="noreferrer" style={{ padding: '10px 18px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Посмотреть</a>
                         {canManage && <span title="удалить" onClick={() => removeMedia(m.id)} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer' }}>✕</span>}

@@ -8,10 +8,48 @@ import { NoAccessPage } from '../system/NoAccessPage';
 import { StagesProvider } from '../../state/StagesContext';
 import { ReportsProvider } from '../../state/ReportsContext';
 import { ArchiveProvider } from '../../state/ArchiveContext';
+import { ProjectDetailsProvider, useProjectDetails } from '../../state/ProjectDetailsContext';
 
 const activeIdFromPath = (pathname: string, projectCode: string) => {
   const rest = pathname.replace(`/${projectCode}`, '').replace(/^\//, '').split('/')[0];
   return NAV_ITEMS.find((it) => it.path === rest)?.id ?? null;
+};
+
+const SidebarInfo = () => {
+  const { details } = useProjectDetails();
+  const [phone, email] = (details.contacts || '').split(' · ');
+  const hasAbout = details.address || details.cadastre;
+  const hasContacts = phone || email;
+  if (!hasAbout && !hasContacts) return null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+      {hasAbout && (
+        <div>
+          <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>о проекте</MonoLabel>
+          {details.address && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>Адрес:</div>
+              <div style={{ marginTop: 4, fontSize: 12, color: SYS.ink2, lineHeight: 1.45 }}>{details.address}</div>
+            </div>
+          )}
+          {details.cadastre && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>Кадастровый номер:</div>
+              <div style={{ marginTop: 4, fontSize: 12, color: SYS.ink2, lineHeight: 1.45 }}>{details.cadastre}</div>
+            </div>
+          )}
+        </div>
+      )}
+      {hasContacts && (
+        <div>
+          <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>контакты</MonoLabel>
+          {phone && <div style={{ marginTop: 12, fontSize: 13, fontWeight: 500 }}>{phone}</div>}
+          {email && <div style={{ marginTop: 4, fontSize: 12, color: SYS.ink2 }}>{email}</div>}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const ProjectSidebar = ({ active }: { active: string | null }) => {
@@ -29,7 +67,7 @@ const ProjectSidebar = ({ active }: { active: string | null }) => {
         padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 28, color: SYS.ink,
       }}
     >
-      <OrlovMark size={11} />
+      <OrlovMark size={9} />
 
       <div style={{ paddingTop: 16, borderTop: `1px solid ${SYS.line}` }}>
         <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>Объект</MonoLabel>
@@ -63,6 +101,8 @@ const ProjectSidebar = ({ active }: { active: string | null }) => {
           );
         })}
       </nav>
+
+      <SidebarInfo />
 
       <div style={{ marginTop: 'auto', paddingTop: 18, borderTop: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <RoleBadge role={user.role} size="sm" />
@@ -100,10 +140,12 @@ export const ProjectShell = () => {
     <StagesProvider projectCode={projectCode}>
       <ReportsProvider projectCode={projectCode}>
         <ArchiveProvider projectCode={projectCode}>
-          <div style={{ width: '100%', minHeight: '100vh', display: 'grid', gridTemplateColumns: '240px 1fr', background: SYS.bg, color: SYS.ink }}>
-            <ProjectSidebar active={active} />
-            <Outlet />
-          </div>
+          <ProjectDetailsProvider projectCode={projectCode}>
+            <div style={{ width: '100%', minHeight: '100vh', display: 'grid', gridTemplateColumns: '240px 1fr', background: SYS.bg, color: SYS.ink }}>
+              <ProjectSidebar active={active} />
+              <Outlet />
+            </div>
+          </ProjectDetailsProvider>
         </ArchiveProvider>
       </ReportsProvider>
     </StagesProvider>

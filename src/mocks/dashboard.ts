@@ -10,6 +10,19 @@ export interface StageEvent {
   title: string;
 }
 
+// Chronological sort key from date ("DD.MM") + year (trailing token of
+// month, e.g. "Апрель 2026") — used wherever events are listed so newly
+// added ones land in date order instead of insertion order.
+const eventTimestamp = (e: StageEvent): number => {
+  const [day, month] = e.date.split('.').map(Number);
+  const year = Number(e.month.trim().split(' ').pop()) || 0;
+  return year * 372 + (month || 0) * 31 + (day || 0);
+};
+
+export const compareEvents = (a: StageEvent, b: StageEvent): number => eventTimestamp(a) - eventTimestamp(b);
+
+export const sortEventsByDate = (events: StageEvent[]): StageEvent[] => [...events].sort(compareEvents);
+
 export interface ContractStage {
   code: string;
   title: string;

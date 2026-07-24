@@ -1,10 +1,10 @@
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import type { StageEvent } from '../../mocks/dashboard';
+import { sortEventsByDate, type StageEvent } from '../../mocks/dashboard';
 
 export const EventColumn = ({ label, sub, tone, events }: { label: string; sub: string; tone: 'plan' | 'fact'; events: StageEvent[] }) => {
   const groups: { month: string; items: StageEvent[] }[] = [];
-  for (const e of events) {
+  for (const e of sortEventsByDate(events)) {
     let g = groups.find((x) => x.month === e.month);
     if (!g) { g = { month: e.month, items: [] }; groups.push(g); }
     g.items.push(e);

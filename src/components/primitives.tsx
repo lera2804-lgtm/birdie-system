@@ -17,6 +17,35 @@ export const OrlovMark = ({ inverse, size = 14 }: { inverse?: boolean; size?: nu
   );
 };
 
+export const ReorderButtons = ({
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
+}: {
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) => (
+  <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+    <span
+      title="переместить выше"
+      onClick={canMoveUp ? onMoveUp : undefined}
+      style={{ fontSize: 9, color: canMoveUp ? SYS.muted : SYS.line, cursor: canMoveUp ? 'pointer' : 'default' }}
+    >
+      ▲
+    </span>
+    <span
+      title="переместить ниже"
+      onClick={canMoveDown ? onMoveDown : undefined}
+      style={{ fontSize: 9, color: canMoveDown ? SYS.muted : SYS.line, cursor: canMoveDown ? 'pointer' : 'default' }}
+    >
+      ▼
+    </span>
+  </div>
+);
+
 export const MonoLabel = ({
   children,
   color,

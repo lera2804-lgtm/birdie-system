@@ -36,7 +36,7 @@ export const ReportsPage = () => {
   return (
     <main style={{ padding: '36px 56px 56px' }}>
       <PageHeader
-        kicker="отчёты · хронологию реализации"
+        kicker="отчёты · хронология реализации"
         title={label.nominative}
         meta={`${PROJECT_INFO[projectCode].code} · ${isEmpty ? 'нет отчётов' : `${reportedCount} отчётных ${pluralDay(reportedCount)}`}`}
         right={

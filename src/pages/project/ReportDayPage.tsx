@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { MonoLabel, Pill } from '../../components/primitives';
 import { SysButton } from '../../components/form';
 import { PageHeader } from '../../components/PageHeader';
+import { SectionHead } from '../../components/SectionHead';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useReports } from '../../state/ReportsContext';
@@ -124,13 +125,11 @@ export const ReportDayPage = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 28 }}>
             {groups.map(({ sp, tasks }) => (
               <section key={sp.code} style={{ background: SYS.paper, border: `1px solid ${SYS.line}` }}>
-                <div style={{ padding: '18px 24px', borderBottom: `1px solid ${SYS.line}`, background: SYS.bg, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <div>
-                    <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>{sp.code}</MonoLabel>
-                    <div style={{ marginTop: 4, fontSize: 16, fontWeight: 500 }}>{sp.title}</div>
-                  </div>
-                  <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{sp.dayNum}-й день проекта</MonoLabel>
-                </div>
+                <SectionHead
+                  kicker={sp.code}
+                  title={sp.title}
+                  action={<MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{sp.dayNum}-й день проекта</MonoLabel>}
+                />
                 <div style={{ padding: '0 24px 4px' }}>
                   {tasks.map((t, i) => (
                     <div key={t.id} style={{ padding: '18px 0', borderTop: i === 0 ? 'none' : `1px solid ${SYS.line}`, display: 'grid', gridTemplateColumns: '32px 1fr auto', gap: 16, alignItems: t.photos.length ? 'flex-start' : 'center' }}>
@@ -152,11 +151,19 @@ export const ReportDayPage = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
               <div>
                 <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>Фронт-офис</MonoLabel>
-                <div style={{ marginTop: 8, fontSize: 14 }}>{report.frontOffice.map((r) => `${r.qty} чел. · ${r.role}`).join('; ') || '—'}</div>
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 14 }}>
+                  {report.frontOffice.length > 0
+                    ? report.frontOffice.map((r, i) => <div key={i}>{r.qty} чел. · {r.role}</div>)
+                    : '—'}
+                </div>
               </div>
               <div>
                 <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>Бэк-офис</MonoLabel>
-                <div style={{ marginTop: 8, fontSize: 14 }}>{report.backOffice.map((r) => `${r.qty} чел. · ${r.role}`).join('; ') || '—'}</div>
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 14 }}>
+                  {report.backOffice.length > 0
+                    ? report.backOffice.map((r, i) => <div key={i}>{r.qty} чел. · {r.role}</div>)
+                    : '—'}
+                </div>
               </div>
             </div>
           </section>

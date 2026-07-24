@@ -1,22 +1,32 @@
 import { useState } from 'react';
 import { SysButton, SysLabeledField, SysModal } from '../form';
-import { MonoLabel } from '../primitives';
+import { MonoLabel, ReorderButtons } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { recomputeReadiness, type ContractStage, type StageEvent, type WorkItem } from '../../mocks/dashboard';
+import { recomputeReadiness, type ContractStage, type WorkItem } from '../../mocks/dashboard';
 import { useStages } from '../../state/StagesContext';
+import { AddEventForm, ExistingEventsBlock } from './EventsListBlock';
 
-const EditWorkRow = ({ w, onEdit, onRemove }: { w: WorkItem; onEdit: (patch: Partial<WorkItem>) => void; onRemove: () => void }) => {
-  const [title, setTitle] = useState(w.title + (w.qty ? ` · ${w.qty}` : ''));
-  const commitTitle = () => {
-    const [t, qty] = title.split(' · ');
+const EditWorkRow = ({
+  w, onEdit, onRemove, canMoveUp, canMoveDown, onMoveUp, onMoveDown,
+}: {
+  w: WorkItem;
+  onEdit: (patch: Partial<WorkItem>) => void;
+  onRemove: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) => {
+  const combined = w.title + (w.qty ? ` · ${w.qty}` : '');
+  const handleChange = (e: any) => {
+    const [t, qty] = e.target.value.split(' · ');
     onEdit({ title: t, qty: qty || undefined });
   };
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 50px 20px', gap: 10, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${SYS.line}` }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 50px 16px 20px', gap: 10, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${SYS.line}` }}>
       <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onBlur={commitTitle}
+        value={combined}
+        onChange={handleChange}
         style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 13, color: SYS.ink, padding: 0, width: '100%' }}
       />
       <input
@@ -25,6 +35,7 @@ const EditWorkRow = ({ w, onEdit, onRemove }: { w: WorkItem; onEdit: (patch: Par
         style={{ width: '100%', accentColor: SYS.red }}
       />
       <div style={{ textAlign: 'right', fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: w.pct === 100 ? SYS.ink : SYS.red }}>{w.pct}%</div>
+      <ReorderButtons canMoveUp={canMoveUp} canMoveDown={canMoveDown} onMoveUp={onMoveUp} onMoveDown={onMoveDown} />
       <span title="удалить работу" onClick={onRemove} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer', textAlign: 'right' }}>✕</span>
     </div>
   );
@@ -55,68 +66,6 @@ const AddWorkForm = ({ onAdd }: { onAdd: (item: WorkItem) => void }) => {
   );
 };
 
-const ExistingEventsBlock = ({ tone, events, onEdit, onRemove }: { tone: 'plan' | 'fact'; events: StageEvent[]; onEdit: (i: number, patch: Partial<StageEvent>) => void; onRemove: (i: number) => void }) => (
-  <div style={{ border: `1px solid ${SYS.line}` }}>
-    <div style={{ padding: '10px 16px', background: tone === 'fact' ? '#f3d9d1' : '#e7e3d8' }}>
-      <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>{tone === 'fact' ? 'факт' : 'план'} · существующие события</MonoLabel>
-    </div>
-    <div style={{ padding: '4px 16px 12px' }}>
-      {events.length === 0 && <div style={{ padding: '10px 0', fontSize: 12, color: SYS.muted }}>— нет событий —</div>}
-      {events.map((e, i) => (
-        <div key={i} style={{ display: 'grid', gridTemplateColumns: '90px 1fr 20px', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: `1px solid ${SYS.line}` }}>
-          <input
-            value={e.date}
-            onChange={(ev) => onEdit(i, { date: ev.target.value })}
-            style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500, color: SYS.ink, padding: 0, width: '100%' }}
-          />
-          <input
-            value={e.title}
-            onChange={(ev) => onEdit(i, { title: ev.target.value })}
-            style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 12.5, color: SYS.ink, padding: 0, width: '100%' }}
-          />
-          <span title="удалить" onClick={() => onRemove(i)} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer', textAlign: 'right' }}>✕</span>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const AddEventForm = ({ tone, onAdd }: { tone: 'plan' | 'fact'; onAdd: (e: StageEvent) => void }) => {
-  const [date, setDate] = useState('');
-  const [title, setTitle] = useState('');
-  const submit = () => {
-    if (!date.trim() || !title.trim()) return;
-    const [dd, mm] = date.split('-').length === 3
-      ? [date.split('-')[2], date.split('-')[1]]
-      : [date, ''];
-    const label = mm ? `${dd}.${mm}` : date;
-    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    const monthIdx = mm ? Number(mm) - 1 : new Date().getMonth();
-    onAdd({ date: label, title: title.trim(), month: `${monthNames[monthIdx]} ${date.split('-')[0] || new Date().getFullYear()}` });
-    setDate('');
-    setTitle('');
-  };
-  return (
-    <div style={{ border: `1px solid ${SYS.line}`, padding: 16 }}>
-      <div style={{ margin: '-16px -16px 14px', padding: '10px 16px', background: tone === 'fact' ? '#f3d9d1' : '#e7e3d8' }}>
-        <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>+ новое событие · {tone === 'fact' ? 'факт' : 'план'}</MonoLabel>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 10 }}>
-        <SysLabeledField label="Дата" type="date" value={date} onChange={(e: any) => setDate(e.target.value)} />
-        <SysLabeledField
-          label="Событие"
-          placeholder={tone === 'fact' ? 'напр. Завершена ливневая канализация' : 'напр. Плановая сдача этапа'}
-          value={title}
-          onChange={(e: any) => setTitle(e.target.value)}
-        />
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <SysButton tone="ghost" full={false} small type="button" disabled={!date.trim() || !title.trim()} onClick={submit}>+ Добавить в {tone === 'fact' ? 'факт' : 'план'}</SysButton>
-      </div>
-    </div>
-  );
-};
-
 export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClose: () => void }) => {
   const { replaceStage } = useStages();
   const [draft, setDraft] = useState<ContractStage>(() => ({ ...stage }));
@@ -129,6 +78,14 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
 
   const setWorkItems = (workItems: WorkItem[]) => {
     setDraft((d) => ({ ...d, workItems, readiness: readinessOverridden ? d.readiness : recomputeReadiness(workItems) }));
+  };
+
+  const moveWorkItem = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= draft.workItems.length) return;
+    const next = [...draft.workItems];
+    [next[i], next[j]] = [next[j], next[i]];
+    setWorkItems(next);
   };
 
   return (
@@ -174,6 +131,10 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
                 w={w}
                 onEdit={(patch) => setWorkItems(draft.workItems.map((x, xi) => (xi === i ? { ...x, ...patch } : x)))}
                 onRemove={() => setWorkItems(draft.workItems.filter((_, xi) => xi !== i))}
+                canMoveUp={i > 0}
+                canMoveDown={i < draft.workItems.length - 1}
+                onMoveUp={() => moveWorkItem(i, -1)}
+                onMoveDown={() => moveWorkItem(i, 1)}
               />
             ))}
           </div>

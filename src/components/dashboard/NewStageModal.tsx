@@ -1,64 +1,34 @@
 import { useState } from 'react';
 import { SysButton, SysLabeledField, SysModal } from '../form';
-import { MonoLabel } from '../primitives';
+import { MonoLabel, ReorderButtons } from '../primitives';
 import { SYS } from '../../theme/tokens';
 import { recomputeReadiness, type ContractStage, type StageEvent, type WorkItem } from '../../mocks/dashboard';
 import { useStages } from '../../state/StagesContext';
+import { AddEventForm, ExistingEventsBlock } from './EventsListBlock';
 
 const AddWorkForm = ({ onAdd }: { onAdd: (item: WorkItem) => void }) => {
   const [title, setTitle] = useState('');
   const [qty, setQty] = useState('');
+  const [pct, setPct] = useState('');
   const submit = () => {
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), qty: qty.trim() || undefined, pct: 0 });
+    onAdd({ title: title.trim(), qty: qty.trim() || undefined, pct: Math.max(0, Math.min(100, Number(pct) || 0)) });
     setTitle('');
     setQty('');
+    setPct('');
   };
   return (
     <div style={{ border: `1px solid ${SYS.line}`, padding: 16, marginTop: 14 }}>
       <div style={{ margin: '-16px -16px 14px', padding: '10px 16px', background: '#EEEDED' }}>
         <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>+ новая работа</MonoLabel>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 90px', gap: 10 }}>
         <SysLabeledField label="Название работы" placeholder="напр. Обработка приствольных кругов" value={title} onChange={(e: any) => setTitle(e.target.value)} />
         <SysLabeledField label="Кол-во, ед." placeholder="напр. 120 шт." value={qty} onChange={(e: any) => setQty(e.target.value)} />
+        <SysLabeledField label="Готовность, %" placeholder="0" type="number" min={0} max={100} value={pct} onChange={(e: any) => setPct(e.target.value)} />
       </div>
       <div style={{ marginTop: 12 }}>
         <SysButton tone="ghost" full={false} small type="button" disabled={!title.trim()} onClick={submit}>+ Добавить работу</SysButton>
-      </div>
-    </div>
-  );
-};
-
-const AddEventForm = ({ tone, onAdd }: { tone: 'plan' | 'fact'; onAdd: (e: StageEvent) => void }) => {
-  const [date, setDate] = useState('');
-  const [title, setTitle] = useState('');
-  const submit = () => {
-    if (!date.trim() || !title.trim()) return;
-    const parts = date.split('-');
-    const label = parts.length === 3 ? `${parts[2]}.${parts[1]}` : date;
-    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    const monthIdx = parts.length === 3 ? Number(parts[1]) - 1 : new Date().getMonth();
-    onAdd({ date: label, title: title.trim(), month: `${monthNames[monthIdx]} ${parts[0] || new Date().getFullYear()}` });
-    setDate('');
-    setTitle('');
-  };
-  return (
-    <div style={{ border: `1px solid ${SYS.line}`, padding: 16 }}>
-      <div style={{ margin: '-16px -16px 14px', padding: '10px 16px', background: tone === 'fact' ? '#f3d9d1' : '#e7e3d8' }}>
-        <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>+ новое событие · {tone === 'fact' ? 'факт' : 'план'}</MonoLabel>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr', gap: 10 }}>
-        <SysLabeledField label="Дата" type="date" value={date} onChange={(e: any) => setDate(e.target.value)} />
-        <SysLabeledField
-          label="Событие"
-          placeholder={tone === 'fact' ? 'напр. Завершена ливневая канализация' : 'напр. Плановая сдача этапа'}
-          value={title}
-          onChange={(e: any) => setTitle(e.target.value)}
-        />
-      </div>
-      <div style={{ marginTop: 12 }}>
-        <SysButton tone="ghost" full={false} small type="button" disabled={!date.trim() || !title.trim()} onClick={submit}>+ Добавить в {tone === 'fact' ? 'факт' : 'план'}</SysButton>
       </div>
     </div>
   );
@@ -77,6 +47,14 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
   const toShort = (iso: string) => {
     const parts = iso.split('-');
     return parts.length === 3 ? `${parts[2]}.${parts[1]}` : null;
+  };
+
+  const moveWorkItem = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= workItems.length) return;
+    const next = [...workItems];
+    [next[i], next[j]] = [next[j], next[i]];
+    setWorkItems(next);
   };
 
   const canSubmit = code.trim() && title.trim();
@@ -125,9 +103,16 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
             Пока пусто — добавьте первые работы, готовность будет считаться по ним автоматически.
           </div>
           {workItems.map((w, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: `1px solid ${SYS.line}`, fontSize: 12.5 }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 40px 16px 20px', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: `1px solid ${SYS.line}`, fontSize: 12.5 }}>
               <span>{w.title}{w.qty && <span style={{ color: SYS.muted }}> · {w.qty}</span>}</span>
-              <span title="удалить" onClick={() => setWorkItems(workItems.filter((_, xi) => xi !== i))} style={{ color: SYS.muted, cursor: 'pointer' }}>✕</span>
+              <span style={{ textAlign: 'right', fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: w.pct === 100 ? SYS.ink : SYS.red }}>{w.pct}%</span>
+              <ReorderButtons
+                canMoveUp={i > 0}
+                canMoveDown={i < workItems.length - 1}
+                onMoveUp={() => moveWorkItem(i, -1)}
+                onMoveDown={() => moveWorkItem(i, 1)}
+              />
+              <span title="удалить" onClick={() => setWorkItems(workItems.filter((_, xi) => xi !== i))} style={{ color: SYS.muted, cursor: 'pointer', textAlign: 'right' }}>✕</span>
             </div>
           ))}
           <AddWorkForm onAdd={(item) => setWorkItems([...workItems, item])} />
@@ -136,7 +121,9 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
         <div>
           <MonoLabel color={SYS.ink} style={{ fontSize: 10, display: 'block', marginBottom: 12 }}>события</MonoLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <ExistingEventsBlock tone="plan" events={planEvents} onRemove={(i) => setPlanEvents(planEvents.filter((_, ei) => ei !== i))} />
             <AddEventForm tone="plan" onAdd={(e) => setPlanEvents([...planEvents, e])} />
+            <ExistingEventsBlock tone="fact" events={factEvents} onRemove={(i) => setFactEvents(factEvents.filter((_, ei) => ei !== i))} />
             <AddEventForm tone="fact" onAdd={(e) => setFactEvents([...factEvents, e])} />
           </div>
         </div>
