@@ -5,6 +5,7 @@ interface StagesState {
   stages: ContractStage[];
   addStage: (stage: ContractStage) => void;
   replaceStage: (code: string, next: ContractStage) => void;
+  removeStage: (code: string) => void;
 }
 
 const StagesContext = createContext<StagesState | null>(null);
@@ -20,6 +21,7 @@ export const StagesProvider = ({ projectCode, children }: { projectCode: string;
     stages,
     addStage: (stage) => setStages((prev) => [...prev, stage]),
     replaceStage: (code, next) => setStages((prev) => prev.map((s) => (s.code === code ? next : s))),
+    removeStage: (code) => setStages((prev) => prev.filter((s) => s.code !== code)),
   };
 
   return <StagesContext.Provider value={value}>{children}</StagesContext.Provider>;

@@ -16,12 +16,17 @@ export const ReportsPage = () => {
   const { user } = useAuth();
   const { projectCode, month: monthParam } = useParams();
   const navigate = useNavigate();
-  const { reports } = useReports();
+  const { reports: allReports } = useReports();
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
 
   if (!user || !projectCode) return null;
   const month = monthParam || REPORT_MONTH;
   const canCreate = user.role === 'admin' || user.role === 'project_manager' || user.role === 'site_manager';
+
+  // Drafts aren't published yet — clients must not see them as if they were.
+  const reports = user.role === 'client'
+    ? Object.fromEntries(Object.entries(allReports).filter(([, r]) => !r.isDraft))
+    : allReports;
 
   const grid = monthGrid(month);
   const cellsInMonth = grid.filter((c) => c.inMonth);
@@ -121,7 +126,7 @@ export const ReportsPage = () => {
           <p style={{ margin: '0 auto 22px', fontSize: 14, color: SYS.muted, lineHeight: 1.55, maxWidth: 460 }}>
             {canCreate ? 'Отчёты появляются здесь по мере работы на площадке. Создайте первый отчёт за сегодня.' : 'Как только менеджер объекта опубликует отчёт, он появится в календаре. Загляните позже.'}
           </p>
-          {canCreate && <SysButton tone="fill" full={false} type="button" onClick={() => setCreatingDate(REPORT_TODAY)}>+ Отчёт за сегодня</SysButton>}
+          {canCreate && <SysButton tone="fill" full={false} small type="button" onClick={() => setCreatingDate(REPORT_TODAY)}>+ Отчёт за сегодня</SysButton>}
         </section>
       ) : (
         <section>

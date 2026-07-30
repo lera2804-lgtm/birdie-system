@@ -102,7 +102,8 @@ const CatalogCardMobile = ({ p }: { p: CatalogProject }) => {
 };
 
 export const CatalogPage = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { archivedCodes } = useArchivedObjects();
   const [loading, setLoading] = useState(true);
@@ -129,7 +130,16 @@ export const CatalogPage = () => {
         <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${SYS.line}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <OrlovMark size={10} />
-            <RoleBadge role={user.role} size="sm" />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+              <RoleBadge role={user.role} size="sm" />
+              <a
+                href="/login"
+                onClick={(e) => { e.preventDefault(); logout(); navigate('/login'); }}
+                style={{ fontSize: 11, color: SYS.muted, textDecoration: 'none' }}
+              >
+                выход ↗
+              </a>
+            </div>
           </div>
           <div style={{ marginTop: 16 }}>
             <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>каталог объектов</MonoLabel>
@@ -189,7 +199,7 @@ export const CatalogPage = () => {
                 : 'Как только вас добавят на объект, он появится здесь. Обратитесь к менеджеру проекта, если ждёте доступ.'}
             </p>
             {user.role === 'admin' && (
-              <SysButton tone="fill" full={false} type="button" onClick={() => setModalOpen(true)}>+ Создать первый объект</SysButton>
+              <SysButton tone="fill" full={false} small type="button" onClick={() => setModalOpen(true)}>+ Создать первый объект</SysButton>
             )}
           </div>
         )}

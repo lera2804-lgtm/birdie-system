@@ -70,7 +70,13 @@ const ProjectSidebar = ({ active }: { active: string | null }) => {
       <OrlovMark size={9} />
 
       <div style={{ paddingTop: 16, borderTop: `1px solid ${SYS.line}` }}>
-        <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>Объект</MonoLabel>
+        <a
+          href="/"
+          onClick={(e) => { e.preventDefault(); navigate('/'); }}
+          style={{ display: 'inline-block', textDecoration: 'none', cursor: 'pointer' }}
+        >
+          <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>← назад к объектам</MonoLabel>
+        </a>
         <div style={{ marginTop: 8, fontSize: 17, fontWeight: 500, letterSpacing: '-0.005em', lineHeight: 1.3 }}>{info.code}</div>
         <div style={{ marginTop: 4, fontSize: 11.5, color: SYS.muted, lineHeight: 1.4 }}>{info.title}</div>
       </div>

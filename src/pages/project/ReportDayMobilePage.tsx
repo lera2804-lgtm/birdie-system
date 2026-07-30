@@ -3,7 +3,9 @@ import { MonoLabel, Pill } from '../../components/primitives';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useReports } from '../../state/ReportsContext';
+import { useStages } from '../../state/StagesContext';
 import { SUBPROJECTS, formatShort } from '../../mocks/reports';
+import { daysSinceStart } from '../../mocks/dashboard';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { OfflineBanner } from '../../components/OfflineBanner';
 
@@ -12,13 +14,18 @@ export const ReportDayMobilePage = () => {
   const { projectCode, month, day } = useParams();
   const navigate = useNavigate();
   const { reports } = useReports();
+  const { stages } = useStages();
   const online = useOnlineStatus();
 
   if (!user || !projectCode || !day) return null;
   const report = reports[day];
 
   const groups = SUBPROJECTS
-    .map((sp) => ({ sp, tasks: report?.tasks.filter((t) => t.subproject === sp.code) ?? [] }))
+    .map((sp) => ({
+      sp,
+      tasks: report?.tasks.filter((t) => t.subproject === sp.code) ?? [],
+      dayNum: daysSinceStart(stages.find((s) => s.code === sp.code)?.start, day),
+    }))
     .filter((g) => g.tasks.length > 0);
 
   const totalTasks = report?.tasks.length ?? 0;
@@ -47,14 +54,14 @@ export const ReportDayMobilePage = () => {
           </div>
 
           <div style={{ flex: 1, overflow: 'auto', padding: '18px 20px 20px' }} className="sys-modal-scroll">
-            {groups.map(({ sp, tasks }) => (
+            {groups.map(({ sp, tasks, dayNum }) => (
               <div key={sp.code} style={{ marginBottom: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                   <div>
                     <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>{sp.code}</MonoLabel>
                     <div style={{ marginTop: 3, fontSize: 14.5, fontWeight: 500 }}>{sp.title}</div>
                   </div>
-                  <MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>{sp.dayNum}-й день</MonoLabel>
+                  {dayNum !== null && <MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>{dayNum}-й день</MonoLabel>}
                 </div>
                 {tasks.map((t) => (
                   <div key={t.id} style={{ border: `1px solid ${SYS.line}`, padding: 14, marginBottom: 12 }}>

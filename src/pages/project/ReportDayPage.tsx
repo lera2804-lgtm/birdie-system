@@ -7,7 +7,9 @@ import { SectionHead } from '../../components/SectionHead';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useReports } from '../../state/ReportsContext';
+import { useStages } from '../../state/StagesContext';
 import { addDays, formatLong, weekdayShort, REPORT_MONTH, SUBPROJECTS, type ReportTask } from '../../mocks/reports';
+import { daysSinceStart } from '../../mocks/dashboard';
 import { PROJECT_INFO } from '../../mocks/project';
 import { PhotoLightbox } from '../../components/reports/PhotoLightbox';
 import { EditReportModal } from '../../components/reports/EditReportModal';
@@ -35,15 +37,22 @@ export const ReportDayPage = () => {
   const { projectCode, month, day } = useParams();
   const navigate = useNavigate();
   const { reports } = useReports();
+  const { stages } = useStages();
   const [lightbox, setLightbox] = useState<{ task: ReportTask; index: number } | null>(null);
   const [editing, setEditing] = useState(false);
 
   if (!user || !projectCode || !day) return null;
-  const report = reports[day];
+  // Drafts aren't published yet — clients must not see them as if they were.
+  const rawReport = reports[day];
+  const report = user.role === 'client' && rawReport?.isDraft ? undefined : rawReport;
   const canEdit = user.role === 'admin' || user.role === 'project_manager';
 
   const groups = SUBPROJECTS
-    .map((sp) => ({ sp, tasks: report?.tasks.filter((t) => t.subproject === sp.code) ?? [] }))
+    .map((sp) => ({
+      sp,
+      tasks: report?.tasks.filter((t) => t.subproject === sp.code) ?? [],
+      dayNum: daysSinceStart(stages.find((s) => s.code === sp.code)?.start, day),
+    }))
     .filter((g) => g.tasks.length > 0);
 
   const totalTasks = report?.tasks.length ?? 0;
@@ -123,12 +132,12 @@ export const ReportDayPage = () => {
       ) : (
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 28 }}>
-            {groups.map(({ sp, tasks }) => (
+            {groups.map(({ sp, tasks, dayNum }) => (
               <section key={sp.code} style={{ background: SYS.paper, border: `1px solid ${SYS.line}` }}>
                 <SectionHead
                   kicker={sp.code}
                   title={sp.title}
-                  action={<MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{sp.dayNum}-й день проекта</MonoLabel>}
+                  action={dayNum !== null && <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{dayNum}-й день проекта</MonoLabel>}
                 />
                 <div style={{ padding: '0 24px 4px' }}>
                   {tasks.map((t, i) => (

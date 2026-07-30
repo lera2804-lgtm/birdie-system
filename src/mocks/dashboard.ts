@@ -23,6 +23,18 @@ export const compareEvents = (a: StageEvent, b: StageEvent): number => eventTime
 
 export const sortEventsByDate = (events: StageEvent[]): StageEvent[] => [...events].sort(compareEvents);
 
+// Days elapsed since a stage's start ("DD.MM", same year as the report
+// being viewed) as of a given ISO report date — the "N-й день проекта"
+// counter must move with the day being viewed, not stay fixed.
+export const daysSinceStart = (start: string | null | undefined, reportDayISO: string): number | null => {
+  if (!start) return null;
+  const [sd, sm] = start.split('.').map(Number);
+  const [ry, rm, rd] = reportDayISO.split('-').map(Number);
+  const startDate = new Date(ry, sm - 1, sd);
+  const targetDate = new Date(ry, rm - 1, rd);
+  return Math.round((targetDate.getTime() - startDate.getTime()) / 86400000) + 1;
+};
+
 export interface ContractStage {
   code: string;
   title: string;

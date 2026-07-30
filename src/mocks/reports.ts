@@ -100,11 +100,12 @@ export interface DayReport {
   milestone: string;
   milestoneTag?: string;
   editedByPM?: string;
+  isDraft?: boolean;
 }
 
 export const SUBPROJECTS = [
-  { code: 'BIRDIE-10/6', title: 'Аудит ландшафт', dayNum: 91 },
-  { code: 'BIRDIE-10/7', title: 'Уход деревья + дубы', dayNum: 55 },
+  { code: 'BIRDIE-10/6', title: 'Аудит ландшафт' },
+  { code: 'BIRDIE-10/7', title: 'Уход деревья + дубы' },
 ];
 
 let seq = 0;

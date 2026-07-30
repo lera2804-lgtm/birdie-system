@@ -12,13 +12,13 @@ import { NewReportMobileView } from '../../components/reports/NewReportMobileVie
 import { EditReportMobileView } from '../../components/reports/EditReportMobileView';
 
 export const ReportsMobilePage = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { projectCode, month: monthParam } = useParams();
   const navigate = useNavigate();
   const { reports } = useReports();
   const online = useOnlineStatus();
-  const [creating, setCreating] = useState(false);
-  const [editingYesterday, setEditingYesterday] = useState(false);
+  const [composingDate, setComposingDate] = useState<string | null>(null);
+  const [editingDate, setEditingDate] = useState<string | null>(null);
 
   if (!user || !projectCode) return null;
   const month = monthParam || REPORT_MONTH;
@@ -36,11 +36,26 @@ export const ReportsMobilePage = () => {
       <div style={{ padding: '20px 20px 16px', borderBottom: `1px solid ${SYS.line}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <OrlovMark size={10} />
-          <RoleBadge role={user.role} size="sm" />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+            <RoleBadge role={user.role} size="sm" />
+            <a
+              href="/login"
+              onClick={(e) => { e.preventDefault(); logout(); navigate('/login'); }}
+              style={{ fontSize: 11, color: SYS.muted, textDecoration: 'none' }}
+            >
+              выход ↗
+            </a>
+          </div>
         </div>
         <div style={{ marginTop: 16, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <div>
-            <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>{projectCode} · отчёты</MonoLabel>
+            <a
+              href="/"
+              onClick={(e) => { e.preventDefault(); navigate('/'); }}
+              style={{ display: 'inline-block', textDecoration: 'none', cursor: 'pointer' }}
+            >
+              <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>← {projectCode} · отчёты</MonoLabel>
+            </a>
             <h1 style={{ margin: '6px 0 0', fontSize: 26, fontWeight: 500, letterSpacing: '-0.01em' }}>{label.nominative}</h1>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
@@ -55,12 +70,12 @@ export const ReportsMobilePage = () => {
           <div style={{ border: `1px dashed ${SYS.line}`, background: '#fbf1ee', padding: 20, textAlign: 'center' }}>
             <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>{formatShort(REPORT_TODAY)} · сегодня</MonoLabel>
             <div style={{ margin: '8px 0 14px', fontSize: 15, fontWeight: 500 }}>Отчёта за сегодня ещё нет</div>
-            <SysButton tone="fill" small type="button" onClick={() => setCreating(true)}>+ Создать отчёт за сегодня</SysButton>
+            <SysButton tone="fill" small type="button" onClick={() => setComposingDate(REPORT_TODAY)}>+ Создать отчёт за сегодня</SysButton>
           </div>
         </div>
-      ) : month === REPORT_MONTH ? (
+      ) : month === REPORT_MONTH && todayReport?.isDraft ? (
         <div style={{ padding: '16px 20px' }}>
-          <SysButton tone="fill" small type="button" onClick={() => setCreating(true)}>+ Отчёт за сегодня</SysButton>
+          <SysButton tone="fill" small type="button" onClick={() => setComposingDate(REPORT_TODAY)}>+ Продолжить черновик за сегодня</SysButton>
         </div>
       ) : null}
 
@@ -68,12 +83,16 @@ export const ReportsMobilePage = () => {
         {days.map((c) => {
           const report = reports[c.date];
           const isToday = c.date === REPORT_TODAY;
-          const isEditable = c.date === yesterday;
+          const isEditable = isToday || c.date === yesterday;
           if (noToday && isToday) return null;
           return (
             <a
               key={c.date}
-              onClick={() => report && navigate(`/${projectCode}/reports/${month}/${c.date}`)}
+              onClick={() => {
+                if (!report) return;
+                if (report.isDraft) setComposingDate(c.date);
+                else navigate(`/${projectCode}/reports/${month}/${c.date}`);
+              }}
               style={{
                 display: 'grid', gridTemplateColumns: '44px 1fr auto', gap: 24, alignItems: 'center',
                 padding: '14px 20px', borderBottom: `1px solid ${SYS.line}`,
@@ -84,7 +103,9 @@ export const ReportsMobilePage = () => {
             >
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 500, color: isToday ? SYS.red : SYS.ink }}>{formatShort(c.date)}</div>
               <div>
-                {report?.milestone ? (
+                {report?.isDraft ? (
+                  <Pill tone="ghost" color={SYS.muted}>черновик</Pill>
+                ) : report?.milestone ? (
                   <div style={{ fontSize: 13, lineHeight: 1.35 }}>★ {report.milestone}</div>
                 ) : report ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -95,10 +116,12 @@ export const ReportsMobilePage = () => {
                   <span style={{ fontSize: 13, color: SYS.muted }}>Нет отчёта</span>
                 )}
               </div>
-              {isToday && <Pill tone="fill">сегодня</Pill>}
-              {isEditable && report && (
-                <span onClick={(e) => { e.stopPropagation(); setEditingYesterday(true); }} style={{ fontSize: 12, color: SYS.ink, cursor: 'pointer', whiteSpace: 'nowrap' }}>✎ изменить</span>
-              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifySelf: 'end' }}>
+                {isToday && <Pill tone="fill">сегодня</Pill>}
+                {isEditable && report && !report.isDraft && (
+                  <span onClick={(e) => { e.stopPropagation(); setEditingDate(c.date); }} style={{ fontSize: 12, color: SYS.ink, cursor: 'pointer', whiteSpace: 'nowrap' }}>✎ изменить</span>
+                )}
+              </div>
             </a>
           );
         })}
@@ -108,9 +131,11 @@ export const ReportsMobilePage = () => {
         <MonoLabel color={SYS.muted} style={{ fontSize: 9 }}>orlov · red</MonoLabel>
       </div>
 
-      {creating && <NewReportMobileView date={REPORT_TODAY} onClose={() => setCreating(false)} />}
-      {editingYesterday && reports[yesterday] && (
-        <EditReportMobileView date={yesterday} report={reports[yesterday]} onClose={() => setEditingYesterday(false)} />
+      {composingDate && (
+        <NewReportMobileView date={composingDate} existing={reports[composingDate]} onClose={() => setComposingDate(null)} />
+      )}
+      {editingDate && reports[editingDate] && (
+        <EditReportMobileView date={editingDate} report={reports[editingDate]} onClose={() => setEditingDate(null)} />
       )}
     </div>
   );

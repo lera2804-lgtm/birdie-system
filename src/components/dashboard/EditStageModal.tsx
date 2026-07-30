@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { SysButton, SysLabeledField, SysModal } from '../form';
 import { MonoLabel, ReorderButtons } from '../primitives';
+import { ConfirmModal } from '../ConfirmModal';
 import { SYS } from '../../theme/tokens';
 import { recomputeReadiness, type ContractStage, type WorkItem } from '../../mocks/dashboard';
 import { useStages } from '../../state/StagesContext';
@@ -67,9 +68,10 @@ const AddWorkForm = ({ onAdd }: { onAdd: (item: WorkItem) => void }) => {
 };
 
 export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClose: () => void }) => {
-  const { replaceStage } = useStages();
+  const { replaceStage, removeStage } = useStages();
   const [draft, setDraft] = useState<ContractStage>(() => ({ ...stage }));
   const [readinessOverridden, setReadinessOverridden] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const commitAndClose = () => {
     replaceStage(stage.code, draft);
@@ -158,6 +160,22 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
             <AddEventForm tone="fact" onAdd={(e) => setDraft((d) => ({ ...d, factEvents: [...d.factEvents, e] }))} />
           </div>
         </div>
+
+        <div style={{ borderTop: `1px solid ${SYS.line}`, paddingTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>опасная зона</MonoLabel>
+            <div style={{ marginTop: 6, fontSize: 12, color: SYS.muted, lineHeight: 1.45, maxWidth: 380 }}>
+              Проект будет удалён без возможности восстановления, вместе с составом работ и событиями.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            style={{ padding: '11px 20px', background: 'transparent', color: SYS.red, border: `1px solid ${SYS.red}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            Удалить проект
+          </button>
+        </div>
       </div>
 
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
@@ -166,6 +184,17 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
           <SysButton type="button" onClick={commitAndClose}>Сохранить изменения</SysButton>
         </div>
       </div>
+
+      {confirmingDelete && (
+        <ConfirmModal
+          kicker="опасная зона · подтверждение"
+          title="Удалить проект?"
+          confirmLabel="Удалить проект"
+          message={`«${draft.code} · ${draft.title}» будет удалён без возможности восстановления — вместе с составом работ и всеми событиями.`}
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={() => { removeStage(stage.code); onClose(); }}
+        />
+      )}
     </SysModal>
   );
 };

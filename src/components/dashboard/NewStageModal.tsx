@@ -25,7 +25,7 @@ const AddWorkForm = ({ onAdd }: { onAdd: (item: WorkItem) => void }) => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 90px', gap: 10 }}>
         <SysLabeledField label="Название работы" placeholder="напр. Обработка приствольных кругов" value={title} onChange={(e: any) => setTitle(e.target.value)} />
         <SysLabeledField label="Кол-во, ед." placeholder="напр. 120 шт." value={qty} onChange={(e: any) => setQty(e.target.value)} />
-        <SysLabeledField label="Готовность, %" placeholder="0" type="number" min={0} max={100} value={pct} onChange={(e: any) => setPct(e.target.value)} />
+        <SysLabeledField label="%" placeholder="0" type="number" min={0} max={100} value={pct} onChange={(e: any) => setPct(e.target.value)} />
       </div>
       <div style={{ marginTop: 12 }}>
         <SysButton tone="ghost" full={false} small type="button" disabled={!title.trim()} onClick={submit}>+ Добавить работу</SysButton>

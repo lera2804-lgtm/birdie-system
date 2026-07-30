@@ -37,7 +37,7 @@ export const EditReportMobileView = ({ date, report, onClose }: { date: string; 
       </div>
 
       <div style={{ padding: '10px 20px', background: '#fbf1ee', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 11.5, color: SYS.red }}>Доступно для правки только за вчерашний день</span>
+        <span style={{ fontSize: 11.5, color: SYS.red }}>Доступно для правки только за сегодня и вчера</span>
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', padding: '18px 20px 20px' }} className="sys-modal-scroll">

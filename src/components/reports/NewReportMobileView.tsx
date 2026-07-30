@@ -10,16 +10,21 @@ import { ConfirmModal } from '../ConfirmModal';
 import { OfflineBanner } from '../OfflineBanner';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
-export const NewReportMobileView = ({ date, onClose }: { date: string; onClose: () => void }) => {
+export const NewReportMobileView = ({ date, existing, onClose }: { date: string; existing?: DayReport; onClose: () => void }) => {
   const { saveReport } = useReports();
   const { addToast } = useToasts();
   const online = useOnlineStatus();
-  const [draft, setDraft] = useState<DayReport>(() => ({ ...makeTemplateReport(date), tasks: [], frontOffice: [{ id: 'o1', qty: '', role: '' }], backOffice: [], milestone: '' }));
+  const [draft, setDraft] = useState<DayReport>(() => existing ?? { ...makeTemplateReport(date), tasks: [], frontOffice: [{ id: 'o1', qty: '', role: '' }], backOffice: [], milestone: '' });
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const deletingTask = draft.tasks.find((t) => t.id === deletingId);
 
+  const saveAsDraft = () => {
+    saveReport(date, { ...draft, isDraft: true });
+    onClose();
+  };
+
   const publish = () => {
-    saveReport(date, draft);
+    saveReport(date, { ...draft, isDraft: false });
     addToast('success', `Отчёт за ${formatShort(date)}.2026 опубликован — клиент уже видит его.`);
     onClose();
   };
@@ -45,7 +50,7 @@ export const NewReportMobileView = ({ date, onClose }: { date: string; onClose: 
       </div>
 
       <div style={{ padding: '14px 20px 18px', borderTop: `1px solid ${SYS.line}`, display: 'flex', gap: 10 }}>
-        <SysButton tone="ghost" full={false} small type="button" onClick={() => { saveReport(date, draft); onClose(); }}>Черновик</SysButton>
+        <SysButton tone="ghost" full={false} small type="button" onClick={saveAsDraft}>Черновик</SysButton>
         <div style={{ flex: 1 }}>
           <SysButton type="button" onClick={publish}>Опубликовать</SysButton>
         </div>
