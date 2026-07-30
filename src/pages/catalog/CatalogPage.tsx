@@ -20,7 +20,7 @@ const CatalogTopbar = () => {
         padding: '22px 48px', borderBottom: `1px solid ${SYS.line}`, background: SYS.paper,
       }}
     >
-      <OrlovMark size={12} />
+      <OrlovMark size={9} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <RoleBadge role={user.role} size="sm" />
         <span style={{ width: 1, height: 16, background: SYS.line }} />
@@ -171,7 +171,7 @@ export const CatalogPage = () => {
       <div style={{ padding: '40px 48px 56px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
-            <MonoLabel color={SYS.red}>каталог проектов</MonoLabel>
+            <MonoLabel color={SYS.red}>{user.role === 'client' ? 'каталог ваших объектов' : 'каталог проектов'}</MonoLabel>
             <h1 style={{ margin: '10px 0 0', fontSize: 34, fontWeight: 500, letterSpacing: '-0.01em' }}>{heading}</h1>
           </div>
           {user.role === 'admin' && (

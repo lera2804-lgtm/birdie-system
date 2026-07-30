@@ -64,6 +64,7 @@ export const ArchivePage = () => {
   const canManage = user.role === 'admin' || user.role === 'project_manager';
 
   const scopedFiles = canManage ? allFiles : allFiles.filter((f) => !f.clientHidden);
+  const sortedMedia = [...media].sort((a, b) => parseShortDate(b.date) - parseShortDate(a.date));
   const types = useMemo(() => ['Все типы', ...Array.from(new Set(scopedFiles.map((f) => f.type)))], [scopedFiles]);
   const filtered = sortFiles(scopedFiles.filter((f) => {
     if (typeFilter !== 'Все типы' && f.type !== typeFilter) return false;
@@ -242,7 +243,7 @@ export const ArchivePage = () => {
               <div style={{ padding: '32px 28px', textAlign: 'center', fontSize: 13, color: SYS.muted, background: SYS.paper }}>Пока нет медиафайлов</div>
             ) : (
               <div style={{ padding: 28, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, background: SYS.paper }}>
-                {media.map((m) => (
+                {sortedMedia.map((m) => (
                   <div key={m.id}>
                     <PhotoPlaceholder label={m.kind === 'AR tour' ? '⊹ 3D' : '▶'} height={220} />
                     <div style={{ marginTop: 14, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>

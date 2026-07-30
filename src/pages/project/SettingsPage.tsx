@@ -107,7 +107,7 @@ export const SettingsPage = () => {
             <SysLabeledField label="Посёлок" value={details.village} disabled={!canEdit} onChange={(e: any) => update({ village: e.target.value })} />
             <SysLabeledField label="Кадастровые номера" value={details.cadastre} disabled={!canEdit} onChange={(e: any) => update({ cadastre: e.target.value })} />
           </div>
-          <SysLabeledField label="Контакты заказчика" value={details.contacts} disabled={!canEdit} onChange={(e: any) => update({ contacts: e.target.value })} />
+          <SysLabeledField label="Контакты" value={details.contacts} disabled={!canEdit} onChange={(e: any) => update({ contacts: e.target.value })} />
         </div>
       </SettingsCard>
 

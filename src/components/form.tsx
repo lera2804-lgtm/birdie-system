@@ -262,7 +262,7 @@ export const AuthShell = ({
         padding: 56,
       }}
     >
-      <OrlovMark inverse size={13} />
+      <OrlovMark inverse size={9} />
       <div style={{ maxWidth: 480 }}>
         <MonoLabel color="#e88a76">{kicker || 'строительный мониторинг'}</MonoLabel>
         <h1
@@ -275,7 +275,7 @@ export const AuthShell = ({
             letterSpacing: '-0.01em',
           }}
         >
-          Ход строительства в одной точке
+          Ход строительства в одной точке
         </h1>
       </div>
       <div
