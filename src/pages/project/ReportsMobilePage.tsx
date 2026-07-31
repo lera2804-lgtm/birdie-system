@@ -6,7 +6,7 @@ import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useReports } from '../../state/ReportsContext';
-import { monthGrid, monthLabel, shiftMonth, REPORT_MONTH, REPORT_TODAY, addDays, formatShort } from '../../mocks/reports';
+import { monthGrid, monthLabel, shiftMonth, currentMonth, todayISO, addDays, formatShort } from '../../mocks/reports';
 import { OfflineBanner } from '../../components/OfflineBanner';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { NewReportMobileView } from '../../components/reports/NewReportMobileView';
@@ -23,12 +23,13 @@ export const ReportsMobilePage = () => {
   const [editingDate, setEditingDate] = useState<string | null>(null);
 
   if (!user || !role || !projectCode) return null;
-  const month = monthParam || REPORT_MONTH;
-  const yesterday = addDays(REPORT_TODAY, -1);
+  const month = monthParam || currentMonth();
+  const today = todayISO();
+  const yesterday = addDays(today, -1);
 
   const days = monthGrid(month).filter((c) => c.inMonth).reverse();
-  const todayReport = month === REPORT_MONTH ? reports[REPORT_TODAY] : undefined;
-  const noToday = month === REPORT_MONTH && !todayReport;
+  const todayReport = month === currentMonth() ? reports[today] : undefined;
+  const noToday = month === currentMonth() && !todayReport;
   const label = monthLabel(month);
 
   return (
@@ -70,21 +71,21 @@ export const ReportsMobilePage = () => {
       {noToday ? (
         <div style={{ padding: '20px 20px 8px' }}>
           <div style={{ border: `1px dashed ${SYS.line}`, background: '#fbf1ee', padding: 20, textAlign: 'center' }}>
-            <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>{formatShort(REPORT_TODAY)} · сегодня</MonoLabel>
+            <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>{formatShort(today)} · сегодня</MonoLabel>
             <div style={{ margin: '8px 0 14px', fontSize: 15, fontWeight: 500 }}>Отчёта за сегодня ещё нет</div>
-            <SysButton tone="fill" small type="button" onClick={() => setComposingDate(REPORT_TODAY)}>+ Создать отчёт за сегодня</SysButton>
+            <SysButton tone="fill" small type="button" onClick={() => setComposingDate(today)}>+ Создать отчёт за сегодня</SysButton>
           </div>
         </div>
-      ) : month === REPORT_MONTH && todayReport?.isDraft ? (
+      ) : month === currentMonth() && todayReport?.isDraft ? (
         <div style={{ padding: '16px 20px' }}>
-          <SysButton tone="fill" small type="button" onClick={() => setComposingDate(REPORT_TODAY)}>+ Продолжить черновик за сегодня</SysButton>
+          <SysButton tone="fill" small type="button" onClick={() => setComposingDate(today)}>+ Продолжить черновик за сегодня</SysButton>
         </div>
       ) : null}
 
       <div style={{ flex: 1, overflow: 'auto' }} className="sys-modal-scroll">
         {days.map((c) => {
           const report = reports[c.date];
-          const isToday = c.date === REPORT_TODAY;
+          const isToday = c.date === today;
           const isEditable = isToday || c.date === yesterday;
           if (noToday && isToday) return null;
           return (

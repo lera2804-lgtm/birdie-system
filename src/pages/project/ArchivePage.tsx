@@ -10,6 +10,7 @@ import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type Medi
 import { UploadDocModal } from '../../components/archive/UploadDocModal';
 import { UploadMediaModal } from '../../components/archive/UploadMediaModal';
 import { ConfirmModal } from '../../components/ConfirmModal';
+import { useToasts } from '../../state/ToastContext';
 
 const ARCH_COLS = '48px 64px 1fr 130px 110px 110px 110px 150px';
 const PAGE_SIZE = 15;
@@ -52,6 +53,7 @@ const EmptySection = ({ icon, title, hint, cta }: { icon: string; title: string;
 export const ArchivePage = () => {
   const role = useObjectRole();
   const { keyFiles, allFiles, media, removeFile, updateFile, toggleHidden, updateMedia, removeMedia } = useArchive();
+  const { addToast } = useToasts();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('Все типы');
   const [sortMode, setSortMode] = useState<SortMode>('date-desc');
@@ -296,7 +298,11 @@ export const ArchivePage = () => {
           title="Удалить файл?"
           message={`«${deletingFile.name}» будет удалён из архива без возможности восстановления.`}
           onCancel={() => setDeletingFile(null)}
-          onConfirm={() => { removeFile(deletingFile.id); setDeletingFile(null); }}
+          onConfirm={async () => {
+            const { error } = await removeFile(deletingFile.id);
+            if (error) { addToast('error', `Не удалось удалить: ${error}`); return; }
+            setDeletingFile(null);
+          }}
         />
       )}
     </main>

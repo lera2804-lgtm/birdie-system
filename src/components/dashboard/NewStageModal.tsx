@@ -4,6 +4,7 @@ import { MonoLabel, ReorderButtons } from '../primitives';
 import { SYS } from '../../theme/tokens';
 import { recomputeReadiness, type ContractStage, type StageEvent, type WorkItem } from '../../mocks/dashboard';
 import { useStages } from '../../state/StagesContext';
+import { useToasts } from '../../state/ToastContext';
 import { AddEventForm, ExistingEventsBlock } from './EventsListBlock';
 
 const AddWorkForm = ({ onAdd }: { onAdd: (item: WorkItem) => void }) => {
@@ -36,6 +37,7 @@ const AddWorkForm = ({ onAdd }: { onAdd: (item: WorkItem) => void }) => {
 
 export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; onClose: () => void }) => {
   const { addStage } = useStages();
+  const { addToast } = useToasts();
   const [code, setCode] = useState('');
   const [title, setTitle] = useState('');
   const [start, setStart] = useState('');
@@ -43,11 +45,7 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
   const [workItems, setWorkItems] = useState<WorkItem[]>([]);
   const [planEvents, setPlanEvents] = useState<StageEvent[]>([]);
   const [factEvents, setFactEvents] = useState<StageEvent[]>([]);
-
-  const toShort = (iso: string) => {
-    const parts = iso.split('-');
-    return parts.length === 3 ? `${parts[2]}.${parts[1]}` : null;
-  };
+  const [submitting, setSubmitting] = useState(false);
 
   const moveWorkItem = (i: number, dir: -1 | 1) => {
     const j = i + dir;
@@ -57,9 +55,9 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
     setWorkItems(next);
   };
 
-  const canSubmit = code.trim() && title.trim();
+  const canSubmit = code.trim() && title.trim() && !submitting;
 
-  const submit = () => {
+  const submit = async () => {
     if (!canSubmit) return;
     const stage: ContractStage = {
       code: code.trim(),
@@ -67,14 +65,20 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
       readiness: recomputeReadiness(workItems),
       updatedOn: null,
       active: false,
-      start: toShort(start),
-      handover: toShort(handover),
+      start: start || null,
+      handover: handover || null,
       today: null,
       workItems,
       planEvents,
       factEvents,
     };
-    addStage(stage);
+    setSubmitting(true);
+    const { error } = await addStage(stage);
+    setSubmitting(false);
+    if (error) {
+      addToast('error', `Не удалось создать проект: ${error}`);
+      return;
+    }
     onClose();
   };
 
@@ -132,7 +136,7 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" disabled={!canSubmit} onClick={submit}>Создать проект</SysButton>
+          <SysButton type="button" disabled={!canSubmit} loading={submitting} onClick={submit}>Создать проект</SysButton>
         </div>
       </div>
     </SysModal>

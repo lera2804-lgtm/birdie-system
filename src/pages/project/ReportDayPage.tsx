@@ -8,7 +8,7 @@ import { SYS } from '../../theme/tokens';
 import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useReports } from '../../state/ReportsContext';
 import { useStages } from '../../state/StagesContext';
-import { addDays, formatLong, weekdayShort, REPORT_MONTH, SUBPROJECTS, type ReportTask } from '../../mocks/reports';
+import { addDays, formatLong, weekdayShort, currentMonth, type ReportTask } from '../../mocks/reports';
 import { daysSinceStart } from '../../mocks/dashboard';
 import { PhotoLightbox } from '../../components/reports/PhotoLightbox';
 import { EditReportModal } from '../../components/reports/EditReportModal';
@@ -46,11 +46,11 @@ export const ReportDayPage = () => {
   const report = role === 'client' && rawReport?.isDraft ? undefined : rawReport;
   const canEdit = role === 'admin' || role === 'project_manager';
 
-  const groups = SUBPROJECTS
+  const groups = stages
     .map((sp) => ({
       sp,
       tasks: report?.tasks.filter((t) => t.subproject === sp.code) ?? [],
-      dayNum: daysSinceStart(stages.find((s) => s.code === sp.code)?.start, day),
+      dayNum: daysSinceStart(sp.start, day),
     }))
     .filter((g) => g.tasks.length > 0);
 
@@ -65,10 +65,10 @@ export const ReportDayPage = () => {
   return (
     <main style={{ position: 'relative', padding: '36px 56px 56px' }}>
       <a
-        onClick={() => navigate(`/${projectCode}/reports/${month || REPORT_MONTH}`)}
+        onClick={() => navigate(`/${projectCode}/reports/${month || currentMonth()}`)}
         style={{ fontSize: 12, color: SYS.muted, textDecoration: 'none', cursor: 'pointer' }}
       >
-        ← {month || REPORT_MONTH}
+        ← {month || currentMonth()}
       </a>
 
       <div style={{ marginTop: 14, marginBottom: 20, display: 'flex', border: `1px solid ${SYS.line}`, background: SYS.paper }}>
@@ -78,7 +78,7 @@ export const ReportDayPage = () => {
           return (
             <a
               key={wd}
-              onClick={() => wReport && navigate(`/${projectCode}/reports/${month || REPORT_MONTH}/${wd}`)}
+              onClick={() => wReport && navigate(`/${projectCode}/reports/${month || currentMonth()}/${wd}`)}
               style={{
                 flex: 1, textAlign: 'center', padding: '14px 6px', cursor: wReport ? 'pointer' : 'default',
                 background: isCurrent ? SYS.ink : SYS.paper, color: isCurrent ? '#fff' : SYS.ink,

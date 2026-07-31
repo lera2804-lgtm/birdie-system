@@ -1,12 +1,13 @@
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { sortEventsByDate, type StageEvent } from '../../mocks/dashboard';
+import { eventMonthLabel, shortDate, sortEventsByDate, type StageEvent } from '../../mocks/dashboard';
 
 export const EventColumn = ({ label, sub, tone, events }: { label: string; sub: string; tone: 'plan' | 'fact'; events: StageEvent[] }) => {
   const groups: { month: string; items: StageEvent[] }[] = [];
   for (const e of sortEventsByDate(events)) {
-    let g = groups.find((x) => x.month === e.month);
-    if (!g) { g = { month: e.month, items: [] }; groups.push(g); }
+    const month = eventMonthLabel(e.date);
+    let g = groups.find((x) => x.month === month);
+    if (!g) { g = { month, items: [] }; groups.push(g); }
     g.items.push(e);
   }
   return (
@@ -23,7 +24,7 @@ export const EventColumn = ({ label, sub, tone, events }: { label: string; sub: 
             <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
               {g.items.map((e, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500, width: 40, flex: 'none' }}>{e.date}</span>
+                  <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500, width: 40, flex: 'none' }}>{shortDate(e.date)}</span>
                   <span style={{ fontSize: 11.5, lineHeight: 1.35 }}>{e.title}</span>
                 </div>
               ))}

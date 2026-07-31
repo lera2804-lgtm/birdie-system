@@ -1,31 +1,44 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { SysButton, SysModal } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { formatLong, makeTemplateReport, type DayReport } from '../../mocks/reports';
+import { formatLong, type DayReport } from '../../mocks/reports';
 import { useReports } from '../../state/ReportsContext';
+import { useStages } from '../../state/StagesContext';
 import { useToasts } from '../../state/ToastContext';
 import { ReportEditorBody } from './ReportEditorBody';
 import { ConfirmModal } from '../ConfirmModal';
 
 export const NewReportModal = ({ date, onClose }: { date: string; onClose: () => void }) => {
+  const { projectCode } = useParams();
   const { saveReport } = useReports();
+  const { stages } = useStages();
   const { addToast } = useToasts();
-  const [draft, setDraft] = useState<DayReport>(() => ({ ...makeTemplateReport(date), tasks: [], frontOffice: [{ id: 'o1', qty: '', role: '' }], backOffice: [{ id: 'o2', qty: '', role: '' }], milestone: '' }));
+  const [draft, setDraft] = useState<DayReport>(() => ({
+    date,
+    tasks: [],
+    frontOffice: [{ id: 'o1', qty: '', role: '' }],
+    backOffice: [{ id: 'o2', qty: '', role: '' }],
+    milestone: '',
+  }));
   const [attempted, setAttempted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const invalidIds = new Set(draft.tasks.filter((t) => !t.title.trim()).map((t) => t.id));
   const invalid = attempted && invalidIds.size > 0;
 
-  const publish = () => {
-    if (invalidIds.size > 0) { setAttempted(true); return; }
-    saveReport(date, draft);
-    addToast('success', `Отчёт за ${formatLong(date)} опубликован — клиент уже видит его.`);
-    onClose();
-  };
-  const saveDraft = () => {
-    saveReport(date, draft);
+  const submit = async (isDraft: boolean) => {
+    if (!isDraft && invalidIds.size > 0) { setAttempted(true); return; }
+    setSubmitting(true);
+    const { error } = await saveReport(date, { ...draft, isDraft });
+    setSubmitting(false);
+    if (error) {
+      addToast('error', `Не удалось сохранить: ${error}`);
+      return;
+    }
+    if (!isDraft) addToast('success', `Отчёт за ${formatLong(date)} опубликован — клиент уже видит его.`);
     onClose();
   };
 
@@ -48,6 +61,8 @@ export const NewReportModal = ({ date, onClose }: { date: string; onClose: () =>
             setDraft={setDraft}
             allowDeskType
             allowBackOffice
+            stages={stages}
+            objectCode={projectCode ?? ''}
             invalidTaskIds={invalid ? invalidIds : undefined}
             onRequestDeleteTask={setDeletingId}
           />
@@ -60,9 +75,9 @@ export const NewReportModal = ({ date, onClose }: { date: string; onClose: () =>
             </div>
           )}
           <div style={{ display: 'flex', gap: 10 }}>
-            <SysButton tone="ghost" full={false} small type="button" onClick={saveDraft}>Сохранить черновик</SysButton>
+            <SysButton tone="ghost" full={false} small type="button" loading={submitting} onClick={() => submit(true)}>Сохранить черновик</SysButton>
             <div style={{ flex: 1 }}>
-              <SysButton type="button" onClick={publish}>Опубликовать отчёт</SysButton>
+              <SysButton type="button" loading={submitting} onClick={() => submit(false)}>Опубликовать отчёт</SysButton>
             </div>
           </div>
         </div>

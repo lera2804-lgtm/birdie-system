@@ -3,6 +3,7 @@ import { SysButton, SysLabeledField, SysModal } from '../../components/form';
 import { MonoLabel, Pill, RoleBadge } from '../../components/primitives';
 import { SYS, type Role } from '../../theme/tokens';
 import { supabase } from '../../lib/supabaseClient';
+import { uploadCover } from '../../lib/storage';
 import { useToasts } from '../../state/ToastContext';
 
 interface Person {
@@ -51,15 +52,15 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
   const [startDate, setStartDate] = useState('');
   const [handoverDate, setHandoverDate] = useState('');
   const [contacts, setContacts] = useState('');
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const [coverName, setCoverName] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [groups, setGroups] = useState(ROLE_GROUPS_INITIAL);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const onFile = (f: File | undefined) => {
     if (!f) return;
-    setCoverName(f.name);
-    setCoverUrl(URL.createObjectURL(f));
+    setCoverFile(f);
+    setCoverPreview(URL.createObjectURL(f));
   };
 
   const updatePerson = (gi: number, pi: number, email: string) => {
@@ -81,6 +82,18 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
     if (!canSubmit) return;
     setSubmitting(true);
     const code = title.trim().toUpperCase().replace(/\s+/g, '-');
+
+    let coverUrl: string | null = null;
+    if (coverFile) {
+      const { url, error: uploadError } = await uploadCover(code, coverFile);
+      if (uploadError) {
+        setSubmitting(false);
+        addToast('error', `Не удалось загрузить фото: ${uploadError}`);
+        return;
+      }
+      coverUrl = url;
+    }
+
     const { error } = await supabase.from('objects').insert({
       code,
       title: title.trim(),
@@ -88,6 +101,7 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
       cadastre: cadastre.trim(),
       contacts: contacts.trim(),
       start_date: startDate || null,
+      cover_url: coverUrl,
     });
     setSubmitting(false);
     if (error) {
@@ -136,13 +150,13 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
           <div
             onClick={() => fileRef.current?.click()}
             style={{
-              marginTop: 8, border: `1px dashed ${SYS.line}`, background: coverUrl ? undefined : '#f7f6f2',
+              marginTop: 8, border: `1px dashed ${SYS.line}`, background: coverPreview ? undefined : '#f7f6f2',
               height: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
               cursor: 'pointer', overflow: 'hidden', position: 'relative',
             }}
           >
-            {coverUrl ? (
-              <img src={coverUrl} alt={coverName ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {coverPreview ? (
+              <img src={coverPreview} alt={coverFile?.name ?? ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <>
                 <span style={{ fontSize: 20, color: SYS.muted }}>⤒</span>

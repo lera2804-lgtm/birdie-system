@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MonoLabel } from '../primitives';
 import { SysButton, SysLabeledField } from '../form';
 import { SYS } from '../../theme/tokens';
-import { compareEvents, type StageEvent } from '../../mocks/dashboard';
+import { compareEvents, shortDate, type StageEvent } from '../../mocks/dashboard';
 
 // Shows plan/fact events already added in a stage editor (create or edit),
 // with delete for every row and inline edit inputs when `onEdit` is given.
@@ -32,6 +32,7 @@ export const ExistingEventsBlock = ({
             {onEdit ? (
               <>
                 <input
+                  type="date"
                   value={e.date}
                   onChange={(ev) => onEdit(i, { date: ev.target.value })}
                   style={{ border: 'none', outline: 'none', background: 'transparent', fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500, color: SYS.ink, padding: 0, width: '100%' }}
@@ -44,7 +45,7 @@ export const ExistingEventsBlock = ({
               </>
             ) : (
               <>
-                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500 }}>{e.date}</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 500 }}>{shortDate(e.date)}</span>
                 <span style={{ fontSize: 12.5, lineHeight: 1.35 }}>{e.title}</span>
               </>
             )}
@@ -71,10 +72,7 @@ export const AddEventForm = ({ tone, onAdd }: { tone: 'plan' | 'fact'; onAdd: (e
 
   const submit = () => {
     if (!canSubmit) return;
-    const [year, mm, dd] = date.split('-');
-    const label = `${dd}.${mm}`;
-    const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    onAdd({ date: label, title: title.trim(), month: `${monthNames[Number(mm) - 1]} ${year}` });
+    onAdd({ date, title: title.trim() });
     setDate('');
     setTitle('');
   };

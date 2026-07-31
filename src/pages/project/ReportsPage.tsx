@@ -6,7 +6,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { SYS } from '../../theme/tokens';
 import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useReports } from '../../state/ReportsContext';
-import { monthGrid, monthLabel, shiftMonth, REPORT_MONTH, REPORT_TODAY } from '../../mocks/reports';
+import { monthGrid, monthLabel, shiftMonth, currentMonth, todayISO } from '../../mocks/reports';
 import { NewReportModal } from '../../components/reports/NewReportModal';
 
 const WEEKDAY_HEADERS = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
@@ -15,11 +15,12 @@ export const ReportsPage = () => {
   const role = useObjectRole();
   const { projectCode, month: monthParam } = useParams();
   const navigate = useNavigate();
-  const { reports: allReports } = useReports();
+  const { reports: allReports, loading } = useReports();
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
 
   if (!role || !projectCode) return null;
-  const month = monthParam || REPORT_MONTH;
+  const month = monthParam || currentMonth();
+  const today = todayISO();
   const canCreate = role === 'admin' || role === 'project_manager' || role === 'site_manager';
 
   // Drafts aren't published yet — clients must not see them as if they were.
@@ -62,6 +63,10 @@ export const ReportsPage = () => {
         }
       />
 
+      {loading && <MonoLabel color={SYS.muted}>Загрузка…</MonoLabel>}
+
+      {!loading && (
+      <>
       <section style={{ background: SYS.paper, border: `1px solid ${SYS.line}`, marginBottom: 28 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: `1px solid ${SYS.line}` }}>
           {WEEKDAY_HEADERS.map((d, i) => (
@@ -71,7 +76,7 @@ export const ReportsPage = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
           {grid.map((c, i) => {
             const report = reports[c.date];
-            const isToday = c.date === REPORT_TODAY;
+            const isToday = c.date === today;
             const isWeekend = i % 7 >= 5;
             const clickable = c.inMonth && !!report;
             const canAdd = c.inMonth && !report && canCreate;
@@ -125,7 +130,7 @@ export const ReportsPage = () => {
           <p style={{ margin: '0 auto 22px', fontSize: 14, color: SYS.muted, lineHeight: 1.55, maxWidth: 460 }}>
             {canCreate ? 'Отчёты появляются здесь по мере работы на площадке. Создайте первый отчёт за сегодня.' : 'Как только менеджер объекта опубликует отчёт, он появится в календаре. Загляните позже.'}
           </p>
-          {canCreate && <SysButton tone="fill" full={false} small type="button" onClick={() => setCreatingDate(REPORT_TODAY)}>+ Отчёт за сегодня</SysButton>}
+          {canCreate && <SysButton tone="fill" full={false} small type="button" onClick={() => setCreatingDate(today)}>+ Отчёт за сегодня</SysButton>}
         </section>
       ) : (
         <section>
@@ -154,6 +159,8 @@ export const ReportsPage = () => {
             </div>
           )}
         </section>
+      )}
+      </>
       )}
 
       {creatingDate && <NewReportModal date={creatingDate} onClose={() => setCreatingDate(null)} />}

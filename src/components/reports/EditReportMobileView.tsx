@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { SysButton } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
 import { formatShort, type DayReport } from '../../mocks/reports';
 import { useReports } from '../../state/ReportsContext';
+import { useStages } from '../../state/StagesContext';
 import { ReportEditorBody } from './ReportEditorBody';
 import { ConfirmModal } from '../ConfirmModal';
 import { OfflineBanner } from '../OfflineBanner';
@@ -11,15 +13,24 @@ import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { useToasts } from '../../state/ToastContext';
 
 export const EditReportMobileView = ({ date, report, onClose }: { date: string; report: DayReport; onClose: () => void }) => {
+  const { projectCode } = useParams();
   const { saveReport } = useReports();
+  const { stages } = useStages();
   const { addToast } = useToasts();
   const online = useOnlineStatus();
   const [draft, setDraft] = useState<DayReport>(() => ({ ...report }));
+  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const deletingTask = draft.tasks.find((t) => t.id === deletingId);
 
-  const save = () => {
-    saveReport(date, draft);
+  const save = async () => {
+    setSaving(true);
+    const { error } = await saveReport(date, draft, true);
+    setSaving(false);
+    if (error) {
+      addToast('error', `Не удалось сохранить: ${error}`);
+      return;
+    }
     addToast('success', 'Изменения сохранены.');
     onClose();
   };
@@ -31,7 +42,7 @@ export const EditReportMobileView = ({ date, report, onClose }: { date: string; 
         <span onClick={onClose} style={{ fontSize: 18, color: SYS.muted, cursor: 'pointer' }}>←</span>
         <div style={{ textAlign: 'center' }}>
           <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>редактирование</MonoLabel>
-          <div style={{ marginTop: 2, fontSize: 13, fontWeight: 500 }}>Отчёт · {formatShort(date)}.2026</div>
+          <div style={{ marginTop: 2, fontSize: 13, fontWeight: 500 }}>Отчёт · {formatShort(date)}</div>
         </div>
         <span style={{ width: 18 }} />
       </div>
@@ -46,6 +57,8 @@ export const EditReportMobileView = ({ date, report, onClose }: { date: string; 
           setDraft={setDraft}
           allowDeskType={false}
           allowBackOffice={false}
+          stages={stages}
+          objectCode={projectCode ?? ''}
           onRequestDeleteTask={setDeletingId}
           addTaskButtonStyle="button"
         />
@@ -54,7 +67,7 @@ export const EditReportMobileView = ({ date, report, onClose }: { date: string; 
       <div style={{ padding: '14px 20px 18px', borderTop: `1px solid ${SYS.line}`, display: 'flex', gap: 10 }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" onClick={save}>Сохранить изменения</SysButton>
+          <SysButton type="button" loading={saving} onClick={save}>Сохранить изменения</SysButton>
         </div>
       </div>
 

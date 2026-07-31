@@ -1,23 +1,32 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { SysButton, SysModal } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
 import { formatLong, type DayReport } from '../../mocks/reports';
 import { useReports } from '../../state/ReportsContext';
+import { useStages } from '../../state/StagesContext';
 import { ReportEditorBody } from './ReportEditorBody';
 import { ConfirmModal } from '../ConfirmModal';
 import { useToasts } from '../../state/ToastContext';
 
 export const EditReportModal = ({ date, report, onClose }: { date: string; report: DayReport; onClose: () => void }) => {
+  const { projectCode } = useParams();
   const { saveReport } = useReports();
+  const { stages } = useStages();
   const { addToast } = useToasts();
   const [draft, setDraft] = useState<DayReport>(() => ({ ...report }));
+  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const save = () => {
-    const now = new Date();
-    const stamp = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')} в ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    saveReport(date, draft, `✎ отредактировано ПМ ${stamp}`);
+  const save = async () => {
+    setSaving(true);
+    const { error } = await saveReport(date, draft, true);
+    setSaving(false);
+    if (error) {
+      addToast('error', `Не удалось сохранить: ${error}`);
+      return;
+    }
     addToast('success', 'Отчёт дня обновлён — изменения уже видны клиенту.');
     onClose();
   };
@@ -44,6 +53,8 @@ export const EditReportModal = ({ date, report, onClose }: { date: string; repor
             setDraft={setDraft}
             allowDeskType
             allowBackOffice
+            stages={stages}
+            objectCode={projectCode ?? ''}
             onRequestDeleteTask={setDeletingId}
           />
         </div>
@@ -51,7 +62,7 @@ export const EditReportModal = ({ date, report, onClose }: { date: string; repor
         <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
           <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
           <div style={{ flex: 1 }}>
-            <SysButton type="button" onClick={save}>Сохранить изменения</SysButton>
+            <SysButton type="button" loading={saving} onClick={save}>Сохранить изменения</SysButton>
           </div>
         </div>
       </SysModal>

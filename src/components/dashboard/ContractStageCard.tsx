@@ -1,7 +1,7 @@
 import { MonoLabel } from '../primitives';
 import { SysButton } from '../form';
 import { SYS } from '../../theme/tokens';
-import type { ContractStage } from '../../mocks/dashboard';
+import { shortDate, type ContractStage } from '../../mocks/dashboard';
 import { StageTimeline } from './StageTimeline';
 import { EventColumn } from './EventColumn';
 
@@ -26,7 +26,7 @@ export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; ca
     <div style={{ marginBottom: 26 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
         <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>таймлайн проекта</MonoLabel>
-        {s.updatedOn && <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>обновлено {s.updatedOn}</MonoLabel>}
+        {s.updatedOn && <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>обновлено {shortDate(s.updatedOn)}</MonoLabel>}
       </div>
       {s.start && s.handover ? (
         <>

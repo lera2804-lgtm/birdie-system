@@ -4,7 +4,7 @@ import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useReports } from '../../state/ReportsContext';
 import { useStages } from '../../state/StagesContext';
-import { SUBPROJECTS, formatShort } from '../../mocks/reports';
+import { formatShort } from '../../mocks/reports';
 import { daysSinceStart } from '../../mocks/dashboard';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { OfflineBanner } from '../../components/OfflineBanner';
@@ -20,11 +20,11 @@ export const ReportDayMobilePage = () => {
   if (!user || !projectCode || !day) return null;
   const report = reports[day];
 
-  const groups = SUBPROJECTS
+  const groups = stages
     .map((sp) => ({
       sp,
       tasks: report?.tasks.filter((t) => t.subproject === sp.code) ?? [],
-      dayNum: daysSinceStart(stages.find((s) => s.code === sp.code)?.start, day),
+      dayNum: daysSinceStart(sp.start, day),
     }))
     .filter((g) => g.tasks.length > 0);
 
@@ -37,7 +37,7 @@ export const ReportDayMobilePage = () => {
       {!online && <OfflineBanner />}
       <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span onClick={() => navigate(`/${projectCode}/reports/${month}`)} style={{ fontSize: 18, color: SYS.muted, cursor: 'pointer' }}>←</span>
-        <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>отчёт · {formatShort(day)}.2026</MonoLabel>
+        <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>отчёт · {formatShort(day)}</MonoLabel>
         <span style={{ width: 18 }} />
       </div>
 

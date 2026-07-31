@@ -11,6 +11,7 @@ import { useObjectRole } from '../../state/ObjectRoleContext';
 import { seedMembers, type Member, type ProjectDetails } from '../../mocks/settings';
 import { useProjectDetails } from '../../state/ProjectDetailsContext';
 import { useToasts } from '../../state/ToastContext';
+import { uploadCover } from '../../lib/storage';
 import { InviteMemberModal } from '../../components/settings/InviteMemberModal';
 
 const SettingsCard = ({ title, sub, children, action }: { title: string; sub?: string; children: React.ReactNode; action?: React.ReactNode }) => (
@@ -57,6 +58,7 @@ export const SettingsPage = () => {
   const [revoking, setRevoking] = useState<Member | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [resentIds, setResentIds] = useState<Set<string>>(new Set());
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   // savedDetails loads asynchronously from Supabase — the draft above only
   // captures it once via useState, so re-sync once the real data arrives.
@@ -126,8 +128,22 @@ export const SettingsPage = () => {
             <img src={details.cover} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
           <div>
-            {canEdit && <SysButton tone="ghost" full={false} small type="button" onClick={() => fileRef.current?.click()}>Заменить фото</SysButton>}
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { const f = e.target.files?.[0]; if (f) update({ cover: URL.createObjectURL(f) }); }} />
+            {canEdit && <SysButton tone="ghost" full={false} small type="button" loading={uploadingCover} onClick={() => fileRef.current?.click()}>Заменить фото</SysButton>}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f || !projectCode) return;
+                setUploadingCover(true);
+                const { url, error } = await uploadCover(projectCode, f);
+                setUploadingCover(false);
+                if (error || !url) { addToast('error', `Не удалось загрузить фото: ${error}`); return; }
+                update({ cover: url });
+              }}
+            />
             <div style={{ marginTop: 10, fontSize: 11.5, color: SYS.muted, lineHeight: 1.5 }}>JPG или PNG · рекомендуемый размер 1200×800</div>
           </div>
         </div>

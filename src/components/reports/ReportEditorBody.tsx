@@ -1,7 +1,7 @@
 import { MonoLabel } from '../primitives';
 import { SysButton, SysLabeledField } from '../form';
 import { SYS } from '../../theme/tokens';
-import { SUBPROJECTS, type DayReport, type ReportTask } from '../../mocks/reports';
+import { type DayReport, type ReportTask } from '../../mocks/reports';
 import { TaskEditorRow } from './TaskEditorRow';
 import { OfficeRows } from './OfficeRows';
 
@@ -9,12 +9,14 @@ let seq = 0;
 const nid = (p: string) => `${p}${Date.now()}-${++seq}`;
 
 export const ReportEditorBody = ({
-  draft, setDraft, allowDeskType, allowBackOffice, invalidTaskIds, onRequestDeleteTask, addTaskButtonStyle = 'link',
+  draft, setDraft, allowDeskType, allowBackOffice, stages, objectCode, invalidTaskIds, onRequestDeleteTask, addTaskButtonStyle = 'link',
 }: {
   draft: DayReport;
   setDraft: (updater: (d: DayReport) => DayReport) => void;
   allowDeskType: boolean;
   allowBackOffice: boolean;
+  stages: { code: string; title: string }[];
+  objectCode: string;
   invalidTaskIds?: Set<string>;
   onRequestDeleteTask: (taskId: string) => void;
   addTaskButtonStyle?: 'link' | 'button';
@@ -23,7 +25,7 @@ export const ReportEditorBody = ({
     setDraft((d) => ({ ...d, tasks: d.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) }));
 
   const addTask = () =>
-    setDraft((d) => ({ ...d, tasks: [...d.tasks, { id: nid('t'), subproject: SUBPROJECTS[0].code, kind: 'field', title: '', photos: [] }] }));
+    setDraft((d) => ({ ...d, tasks: [...d.tasks, { id: nid('t'), subproject: stages[0]?.code ?? '', kind: 'field', title: '', photos: [] }] }));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -44,6 +46,9 @@ export const ReportEditorBody = ({
             task={t}
             n={i + 1}
             allowDeskType={allowDeskType}
+            stages={stages}
+            objectCode={objectCode}
+            reportDate={draft.date}
             onChange={(patch) => updateTask(t.id, patch)}
             onRequestDelete={() => onRequestDeleteTask(t.id)}
             nameError={invalidTaskIds?.has(t.id)}

@@ -13,13 +13,13 @@ import { ReportDaySection } from './pages/project/ReportDaySection';
 import { ArchivePage } from './pages/project/ArchivePage';
 import { SettingsPage } from './pages/project/SettingsPage';
 import { NotFoundPage } from './pages/system/NotFoundPage';
-import { REPORT_MONTH } from './mocks/reports';
+import { currentMonth } from './mocks/reports';
 import { ToastProvider } from './state/ToastContext';
 import { ToastStack } from './components/ToastStack';
 
 const ReportsIndexRedirect = () => {
   const { projectCode } = useParams();
-  return <Navigate to={`/${projectCode}/reports/${REPORT_MONTH}`} replace />;
+  return <Navigate to={`/${projectCode}/reports/${currentMonth()}`} replace />;
 };
 
 function App() {

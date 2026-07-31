@@ -18,9 +18,10 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
   const [driveUrl, setDriveUrl] = useState('');
   const [createdDate, setCreatedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  const canSubmit = title.trim() && createdDate.trim();
+  const [submitting, setSubmitting] = useState(false);
+  const canSubmit = title.trim() && createdDate.trim() && !submitting;
 
-  const submit = () => {
+  const submit = async () => {
     if (!canSubmit) return;
     const media: MediaItem = {
       id: `m${Date.now()}`,
@@ -29,7 +30,13 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
       date: toShortDate(createdDate),
       driveUrl: driveUrl.trim() || undefined,
     };
-    addMedia(media);
+    setSubmitting(true);
+    const { error } = await addMedia(media);
+    setSubmitting(false);
+    if (error) {
+      addToast('error', `Не удалось добавить медиафайл: ${error}`);
+      return;
+    }
     addToast('success', `«${media.name}» добавлен в мультимедиа.`);
     onClose();
   };
@@ -79,7 +86,7 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" disabled={!canSubmit} onClick={submit}>Добавить в мультимедиа</SysButton>
+          <SysButton type="button" loading={submitting} disabled={!canSubmit} onClick={submit}>Добавить в мультимедиа</SysButton>
         </div>
       </div>
     </SysModal>

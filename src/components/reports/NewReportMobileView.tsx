@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { SysButton } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { formatShort, makeTemplateReport, type DayReport } from '../../mocks/reports';
+import { formatShort, type DayReport } from '../../mocks/reports';
 import { useReports } from '../../state/ReportsContext';
+import { useStages } from '../../state/StagesContext';
 import { useToasts } from '../../state/ToastContext';
 import { ReportEditorBody } from './ReportEditorBody';
 import { ConfirmModal } from '../ConfirmModal';
@@ -11,21 +13,25 @@ import { OfflineBanner } from '../OfflineBanner';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 export const NewReportMobileView = ({ date, existing, onClose }: { date: string; existing?: DayReport; onClose: () => void }) => {
+  const { projectCode } = useParams();
   const { saveReport } = useReports();
+  const { stages } = useStages();
   const { addToast } = useToasts();
   const online = useOnlineStatus();
-  const [draft, setDraft] = useState<DayReport>(() => existing ?? { ...makeTemplateReport(date), tasks: [], frontOffice: [{ id: 'o1', qty: '', role: '' }], backOffice: [], milestone: '' });
+  const [draft, setDraft] = useState<DayReport>(() => existing ?? { date, tasks: [], frontOffice: [{ id: 'o1', qty: '', role: '' }], backOffice: [], milestone: '' });
+  const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const deletingTask = draft.tasks.find((t) => t.id === deletingId);
 
-  const saveAsDraft = () => {
-    saveReport(date, { ...draft, isDraft: true });
-    onClose();
-  };
-
-  const publish = () => {
-    saveReport(date, { ...draft, isDraft: false });
-    addToast('success', `Отчёт за ${formatShort(date)}.2026 опубликован — клиент уже видит его.`);
+  const submit = async (isDraft: boolean) => {
+    setSubmitting(true);
+    const { error } = await saveReport(date, { ...draft, isDraft });
+    setSubmitting(false);
+    if (error) {
+      addToast('error', `Не удалось сохранить: ${error}`);
+      return;
+    }
+    if (!isDraft) addToast('success', `Отчёт за ${formatShort(date)} опубликован — клиент уже видит его.`);
     onClose();
   };
 
@@ -34,7 +40,7 @@ export const NewReportMobileView = ({ date, existing, onClose }: { date: string;
       {!online && <OfflineBanner />}
       <div style={{ padding: '18px 20px 14px', borderBottom: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span onClick={onClose} style={{ fontSize: 18, color: SYS.muted, cursor: 'pointer' }}>←</span>
-        <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>отчёт · {formatShort(date)}.2026</MonoLabel>
+        <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>отчёт · {formatShort(date)}</MonoLabel>
         <span style={{ width: 18 }} />
       </div>
 
@@ -44,15 +50,17 @@ export const NewReportMobileView = ({ date, existing, onClose }: { date: string;
           setDraft={setDraft}
           allowDeskType={false}
           allowBackOffice={false}
+          stages={stages}
+          objectCode={projectCode ?? ''}
           onRequestDeleteTask={setDeletingId}
           addTaskButtonStyle="button"
         />
       </div>
 
       <div style={{ padding: '14px 20px 18px', borderTop: `1px solid ${SYS.line}`, display: 'flex', gap: 10 }}>
-        <SysButton tone="ghost" full={false} small type="button" onClick={saveAsDraft}>Черновик</SysButton>
+        <SysButton tone="ghost" full={false} small type="button" loading={submitting} onClick={() => submit(true)}>Черновик</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" onClick={publish}>Опубликовать</SysButton>
+          <SysButton type="button" loading={submitting} onClick={() => submit(false)}>Опубликовать</SysButton>
         </div>
       </div>
 

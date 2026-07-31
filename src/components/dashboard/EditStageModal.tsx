@@ -5,6 +5,7 @@ import { ConfirmModal } from '../ConfirmModal';
 import { SYS } from '../../theme/tokens';
 import { recomputeReadiness, type ContractStage, type WorkItem } from '../../mocks/dashboard';
 import { useStages } from '../../state/StagesContext';
+import { useToasts } from '../../state/ToastContext';
 import { AddEventForm, ExistingEventsBlock } from './EventsListBlock';
 
 const EditWorkRow = ({
@@ -69,12 +70,20 @@ const AddWorkForm = ({ onAdd }: { onAdd: (item: WorkItem) => void }) => {
 
 export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClose: () => void }) => {
   const { replaceStage, removeStage } = useStages();
+  const { addToast } = useToasts();
   const [draft, setDraft] = useState<ContractStage>(() => ({ ...stage }));
   const [readinessOverridden, setReadinessOverridden] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const commitAndClose = () => {
-    replaceStage(stage.code, draft);
+  const commitAndClose = async () => {
+    setSaving(true);
+    const { error } = await replaceStage(stage.code, draft);
+    setSaving(false);
+    if (error) {
+      addToast('error', `Не удалось сохранить: ${error}`);
+      return;
+    }
     onClose();
   };
 
@@ -105,8 +114,8 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
 
       <div style={{ padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 28 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <SysLabeledField label="Дата старта" value={draft.start ?? ''} placeholder="дд.мм" onChange={(e: any) => setDraft((d) => ({ ...d, start: e.target.value || null }))} />
-          <SysLabeledField label="Плановая сдача" value={draft.handover ?? ''} placeholder="дд.мм" onChange={(e: any) => setDraft((d) => ({ ...d, handover: e.target.value || null }))} />
+          <SysLabeledField label="Дата старта" type="date" value={draft.start ?? ''} onChange={(e: any) => setDraft((d) => ({ ...d, start: e.target.value || null }))} />
+          <SysLabeledField label="Плановая сдача" type="date" value={draft.handover ?? ''} onChange={(e: any) => setDraft((d) => ({ ...d, handover: e.target.value || null }))} />
         </div>
 
         <div>
@@ -181,7 +190,7 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" onClick={commitAndClose}>Сохранить изменения</SysButton>
+          <SysButton type="button" loading={saving} onClick={commitAndClose}>Сохранить изменения</SysButton>
         </div>
       </div>
 
@@ -192,7 +201,11 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
           confirmLabel="Удалить проект"
           message={`«${draft.code} · ${draft.title}» будет удалён без возможности восстановления — вместе с составом работ и всеми событиями.`}
           onCancel={() => setConfirmingDelete(false)}
-          onConfirm={() => { removeStage(stage.code); onClose(); }}
+          onConfirm={async () => {
+            const { error } = await removeStage(stage.code);
+            if (error) { addToast('error', `Не удалось удалить: ${error}`); return; }
+            onClose();
+          }}
         />
       )}
     </SysModal>

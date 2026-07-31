@@ -49,9 +49,10 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
     }, 150);
   };
 
-  const canSubmit = title.trim() && createdDate.trim() && (uploadState === 'done' || driveUrl.trim());
+  const [submitting, setSubmitting] = useState(false);
+  const canSubmit = title.trim() && createdDate.trim() && (uploadState === 'done' || driveUrl.trim()) && !submitting;
 
-  const submit = () => {
+  const submit = async () => {
     if (!canSubmit) return;
     const file: ArchiveFile = {
       id: `f${Date.now()}`,
@@ -62,10 +63,17 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
       created: toShortDate(createdDate),
       uploaded: new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' }),
       key: isKey,
+      keyStatus: isKey ? status : undefined,
       clientHidden: !visible,
       driveUrl: driveUrl.trim() || undefined,
     };
-    addFile(file);
+    setSubmitting(true);
+    const { error } = await addFile(file);
+    setSubmitting(false);
+    if (error) {
+      addToast('error', `Не удалось добавить файл: ${error}`);
+      return;
+    }
     addToast('success', `«${file.name}» добавлен в архив.`);
     onClose();
   };
@@ -170,7 +178,7 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" loading={uploadState === 'progress'} disabled={!canSubmit} onClick={submit}>
+          <SysButton type="button" loading={uploadState === 'progress' || submitting} disabled={!canSubmit} onClick={submit}>
             {uploadState === 'progress' ? 'Загрузка…' : 'Загрузить в архив'}
           </SysButton>
         </div>
