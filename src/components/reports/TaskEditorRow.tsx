@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { MonoLabel } from '../primitives';
 import { SysLabeledField, SysSelectField } from '../form';
 import { SYS } from '../../theme/tokens';
@@ -24,6 +24,7 @@ export const TaskEditorRow = ({
   const fileRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToasts();
   const isField = task.kind === 'field';
+  const [dragOver, setDragOver] = useState(false);
 
   const addFiles = async (files: FileList | null) => {
     if (!files) return;
@@ -110,7 +111,17 @@ export const TaskEditorRow = ({
               {task.photos.length < MAX_PHOTOS && (
                 <div
                   onClick={() => fileRef.current?.click()}
-                  style={{ aspectRatio: '1', border: `1px dashed ${SYS.line}`, background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: SYS.muted, cursor: 'pointer' }}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    addFiles(e.dataTransfer.files);
+                  }}
+                  style={{
+                    aspectRatio: '1', border: `1px dashed ${dragOver ? SYS.red : SYS.line}`, background: dragOver ? '#fbf1ee' : '#f7f6f2',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: SYS.muted, cursor: 'pointer',
+                  }}
                 >+</div>
               )}
             </div>
