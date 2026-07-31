@@ -5,12 +5,11 @@ import { SysButton } from '../../components/form';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionHead } from '../../components/SectionHead';
 import { SYS } from '../../theme/tokens';
-import { useAuth } from '../../auth/AuthContext';
+import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useReports } from '../../state/ReportsContext';
 import { useStages } from '../../state/StagesContext';
 import { addDays, formatLong, weekdayShort, REPORT_MONTH, SUBPROJECTS, type ReportTask } from '../../mocks/reports';
 import { daysSinceStart } from '../../mocks/dashboard';
-import { PROJECT_INFO } from '../../mocks/project';
 import { PhotoLightbox } from '../../components/reports/PhotoLightbox';
 import { EditReportModal } from '../../components/reports/EditReportModal';
 
@@ -33,7 +32,7 @@ const TaskThumbGrid = ({ task, onOpen }: { task: ReportTask; onOpen: (index: num
 );
 
 export const ReportDayPage = () => {
-  const { user } = useAuth();
+  const role = useObjectRole();
   const { projectCode, month, day } = useParams();
   const navigate = useNavigate();
   const { reports } = useReports();
@@ -41,11 +40,11 @@ export const ReportDayPage = () => {
   const [lightbox, setLightbox] = useState<{ task: ReportTask; index: number } | null>(null);
   const [editing, setEditing] = useState(false);
 
-  if (!user || !projectCode || !day) return null;
+  if (!role || !projectCode || !day) return null;
   // Drafts aren't published yet — clients must not see them as if they were.
   const rawReport = reports[day];
-  const report = user.role === 'client' && rawReport?.isDraft ? undefined : rawReport;
-  const canEdit = user.role === 'admin' || user.role === 'project_manager';
+  const report = role === 'client' && rawReport?.isDraft ? undefined : rawReport;
+  const canEdit = role === 'admin' || role === 'project_manager';
 
   const groups = SUBPROJECTS
     .map((sp) => ({
@@ -100,8 +99,8 @@ export const ReportDayPage = () => {
         title={formatLong(day)}
         meta={
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span>{PROJECT_INFO[projectCode].code} · {report ? `${groups.length} ${pluralProject(groups.length)} в работе сегодня` : 'нет отчёта за этот день'}</span>
-            {report?.editedByPM && user.role !== 'client' && (
+            <span>{projectCode} · {report ? `${groups.length} ${pluralProject(groups.length)} в работе сегодня` : 'нет отчёта за этот день'}</span>
+            {report?.editedByPM && role !== 'client' && (
               <>
                 <span style={{ width: 4, height: 4, borderRadius: '50%', background: SYS.line, flex: 'none' }} />
                 <span style={{ color: SYS.ink2 }}>{report.editedByPM}</span>
@@ -126,7 +125,7 @@ export const ReportDayPage = () => {
           <div style={{ width: 50, height: 50, border: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: SYS.muted, margin: '0 auto 18px' }}>◷</div>
           <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 500, letterSpacing: '-0.008em' }}>За этот день отчёта нет</h2>
           <p style={{ margin: '0 auto', fontSize: 14, color: SYS.muted, lineHeight: 1.55, maxWidth: 420 }}>
-            {user.role === 'client' ? 'В этот день работы не велись или отчёт ещё не опубликован. Загляните в соседние дни календаря.' : 'Отчёт за этот день ещё не создан.'}
+            {role === 'client' ? 'В этот день работы не велись или отчёт ещё не опубликован. Загляните в соседние дни календаря.' : 'Отчёт за этот день ещё не создан.'}
           </p>
         </section>
       ) : (

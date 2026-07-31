@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { SysButton, SysLabeledField, SysModal } from '../../components/form';
 import { MonoLabel, Pill, RoleBadge } from '../../components/primitives';
 import { SYS, type Role } from '../../theme/tokens';
-import type { CatalogProject } from '../../mocks/catalog';
+import { supabase } from '../../lib/supabaseClient';
 import { useToasts } from '../../state/ToastContext';
 
 interface Person {
@@ -42,8 +42,9 @@ const AssignRoleRow = ({
   </div>
 );
 
-export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; onCreate: (p: CatalogProject) => void }) => {
+export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; onCreate: () => void }) => {
   const { addToast } = useToasts();
+  const [submitting, setSubmitting] = useState(false);
   const [title, setTitle] = useState('');
   const [address, setAddress] = useState('');
   const [cadastre, setCadastre] = useState('');
@@ -74,12 +75,26 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
     setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: [...g.people, { email: '' }] } : g)));
   };
 
-  const canSubmit = title.trim().length > 0;
+  const canSubmit = title.trim().length > 0 && !submitting;
 
-  const submit = () => {
+  const submit = async () => {
     if (!canSubmit) return;
+    setSubmitting(true);
     const code = title.trim().toUpperCase().replace(/\s+/g, '-');
-    onCreate({ code, title: title.trim(), address: address.trim(), cover: coverUrl ?? undefined });
+    const { error } = await supabase.from('objects').insert({
+      code,
+      title: title.trim(),
+      address: address.trim(),
+      cadastre: cadastre.trim(),
+      contacts: contacts.trim(),
+      start_date: startDate || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      addToast('error', `Не удалось создать объект: ${error.message}`);
+      return;
+    }
+    onCreate();
     addToast('success', `Объект «${title.trim()}» создан.`);
   };
 
@@ -176,7 +191,7 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" disabled={!canSubmit} onClick={submit}>Создать объект</SysButton>
+          <SysButton type="button" disabled={!canSubmit} loading={submitting} onClick={submit}>Создать объект</SysButton>
         </div>
       </div>
     </SysModal>

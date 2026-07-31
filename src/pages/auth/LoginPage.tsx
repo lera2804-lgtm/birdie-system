@@ -6,8 +6,6 @@ import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useIsMobile } from '../../hooks/useIsMobile';
 
-const DEMO_HINT = 'Демо-пароль для всех аккаунтов: demo1234 (admin: orlov@orlov.red · PM: a.chernyshev@orlov.red · Object Manager: brigada2@orlov.red · Client: invest@example.com)';
-
 export const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -75,12 +73,6 @@ export const LoginPage = () => {
     </div>
   );
 
-  const hint = (
-    <div style={{ marginTop: 20, fontSize: 10.5, color: SYS.muted, lineHeight: 1.5, borderTop: `1px solid ${SYS.line}`, paddingTop: 14 }}>
-      {DEMO_HINT}
-    </div>
-  );
-
   if (isMobile) {
     return (
       <div style={{ minHeight: '100vh', background: SYS.paper, color: SYS.ink, fontFamily: 'inherit', display: 'flex', flexDirection: 'column' }}>
@@ -121,8 +113,6 @@ export const LoginPage = () => {
             Забыли пароль?
           </a>
 
-          {hint}
-
           <div style={{ marginTop: 'auto', paddingTop: 20, borderTop: `1px solid ${SYS.line}`, textAlign: 'center' }}>
             <MonoLabel color={SYS.muted} style={{ fontSize: 9 }}>orlov · red</MonoLabel>
           </div>
@@ -151,7 +141,6 @@ export const LoginPage = () => {
         </div>
 
         {links}
-        {hint}
       </form>
     </AuthShell>
   );

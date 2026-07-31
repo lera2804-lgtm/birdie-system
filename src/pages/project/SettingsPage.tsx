@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRef } from 'react';
 import { MonoLabel, RoleBadge } from '../../components/primitives';
@@ -7,9 +7,8 @@ import { PageHeader } from '../../components/PageHeader';
 import { SectionHead } from '../../components/SectionHead';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { SYS } from '../../theme/tokens';
-import { useAuth } from '../../auth/AuthContext';
+import { useObjectRole } from '../../state/ObjectRoleContext';
 import { seedMembers, type Member, type ProjectDetails } from '../../mocks/settings';
-import { useArchivedObjects } from '../../state/ArchivedObjectsContext';
 import { useProjectDetails } from '../../state/ProjectDetailsContext';
 import { useToasts } from '../../state/ToastContext';
 import { InviteMemberModal } from '../../components/settings/InviteMemberModal';
@@ -43,11 +42,10 @@ const MemberRow = ({ m, canManage, resent, onResend, onRevoke }: { m: Member; ca
 );
 
 export const SettingsPage = () => {
-  const { user } = useAuth();
+  const role = useObjectRole();
   const { projectCode } = useParams();
   const navigate = useNavigate();
-  const { archiveProject } = useArchivedObjects();
-  const { details: savedDetails, setDetails: commitDetails } = useProjectDetails();
+  const { details: savedDetails, loading: detailsLoading, setDetails: commitDetails, archiveObject } = useProjectDetails();
   const { addToast } = useToasts();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -60,8 +58,15 @@ export const SettingsPage = () => {
   const [archiving, setArchiving] = useState(false);
   const [resentIds, setResentIds] = useState<Set<string>>(new Set());
 
-  if (!user || !projectCode) return null;
-  const canEdit = user.role === 'admin' || user.role === 'project_manager';
+  // savedDetails loads asynchronously from Supabase — the draft above only
+  // captures it once via useState, so re-sync once the real data arrives.
+  useEffect(() => {
+    if (!detailsLoading) setDetails(savedDetails);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailsLoading]);
+
+  if (!role || !projectCode) return null;
+  const canEdit = role === 'admin' || role === 'project_manager';
 
   const update = (patch: Partial<ProjectDetails>) => {
     setDetails((d) => ({ ...d, ...patch }));
@@ -69,8 +74,12 @@ export const SettingsPage = () => {
     setSavedAt(null);
   };
 
-  const save = () => {
-    commitDetails(details);
+  const save = async () => {
+    const { error } = await commitDetails(details);
+    if (error) {
+      addToast('error', `Не удалось сохранить: ${error}`);
+      return;
+    }
     setDirty(false);
     setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }));
     addToast('success', 'Настройки объекта сохранены.');
@@ -91,7 +100,7 @@ export const SettingsPage = () => {
               )
             )}
             {canEdit && <SysButton tone="fill" full={false} small type="button" disabled={!dirty} onClick={save}>Сохранить</SysButton>}
-            <RoleBadge role={user.role} size="sm" />
+            <RoleBadge role={role} size="sm" />
           </>
         }
       />
@@ -149,7 +158,7 @@ export const SettingsPage = () => {
         </div>
       </SettingsCard>
 
-      {user.role === 'admin' && (
+      {role === 'admin' && (
         <SettingsCard title="Опасная зона" sub="действия необратимы">
           <div style={{ padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 13, color: SYS.ink2, lineHeight: 1.5, maxWidth: 520 }}>
@@ -194,7 +203,12 @@ export const SettingsPage = () => {
           confirmLabel="Архивировать"
           message={`${projectCode} скроется из каталога у всех ролей. Данные, отчёты и файлы сохранятся. Восстановить объект сможет только Admin.`}
           onCancel={() => setArchiving(false)}
-          onConfirm={() => { archiveProject(projectCode); addToast('success', `${projectCode} архивирован и скрыт из каталога.`); navigate('/'); }}
+          onConfirm={async () => {
+            const { error } = await archiveObject();
+            if (error) { addToast('error', `Не удалось архивировать: ${error}`); return; }
+            addToast('success', `${projectCode} архивирован и скрыт из каталога.`);
+            navigate('/');
+          }}
         />
       )}
     </main>

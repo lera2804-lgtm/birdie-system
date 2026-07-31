@@ -12,7 +12,7 @@ const SysBareTop = () => {
       <OrlovMark size={12} />
       {user ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <RoleBadge role={user.role} size="sm" />
+          {user.isAdmin && <RoleBadge role="admin" size="sm" />}
           <a href="/login" onClick={(e) => { e.preventDefault(); logout(); navigate('/login'); }} style={{ fontSize: 12, color: SYS.muted, textDecoration: 'none' }}>выход ↗</a>
         </div>
       ) : (

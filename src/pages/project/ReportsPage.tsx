@@ -4,27 +4,26 @@ import { MonoLabel } from '../../components/primitives';
 import { SysButton } from '../../components/form';
 import { PageHeader } from '../../components/PageHeader';
 import { SYS } from '../../theme/tokens';
-import { useAuth } from '../../auth/AuthContext';
+import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useReports } from '../../state/ReportsContext';
 import { monthGrid, monthLabel, shiftMonth, REPORT_MONTH, REPORT_TODAY } from '../../mocks/reports';
-import { PROJECT_INFO } from '../../mocks/project';
 import { NewReportModal } from '../../components/reports/NewReportModal';
 
 const WEEKDAY_HEADERS = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
 
 export const ReportsPage = () => {
-  const { user } = useAuth();
+  const role = useObjectRole();
   const { projectCode, month: monthParam } = useParams();
   const navigate = useNavigate();
   const { reports: allReports } = useReports();
   const [creatingDate, setCreatingDate] = useState<string | null>(null);
 
-  if (!user || !projectCode) return null;
+  if (!role || !projectCode) return null;
   const month = monthParam || REPORT_MONTH;
-  const canCreate = user.role === 'admin' || user.role === 'project_manager' || user.role === 'site_manager';
+  const canCreate = role === 'admin' || role === 'project_manager' || role === 'site_manager';
 
   // Drafts aren't published yet — clients must not see them as if they were.
-  const reports = user.role === 'client'
+  const reports = role === 'client'
     ? Object.fromEntries(Object.entries(allReports).filter(([, r]) => !r.isDraft))
     : allReports;
 
@@ -43,7 +42,7 @@ export const ReportsPage = () => {
       <PageHeader
         kicker="отчёты · хронология реализации"
         title={label.nominative}
-        meta={`${PROJECT_INFO[projectCode].code} · ${isEmpty ? 'нет отчётов' : `${reportedCount} отчётных ${pluralDay(reportedCount)}`}`}
+        meta={`${projectCode} · ${isEmpty ? 'нет отчётов' : `${reportedCount} отчётных ${pluralDay(reportedCount)}`}`}
         right={
           <>
             <button

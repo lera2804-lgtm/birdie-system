@@ -1,9 +1,9 @@
-import { useAuth } from '../../auth/AuthContext';
+import { useObjectRole } from '../../state/ObjectRoleContext';
 import { ReportDayPage } from './ReportDayPage';
 import { ReportDayMobilePage } from './ReportDayMobilePage';
 
 export const ReportDaySection = () => {
-  const { user } = useAuth();
-  if (user?.role === 'site_manager') return <ReportDayMobilePage />;
+  const role = useObjectRole();
+  if (role === 'site_manager') return <ReportDayMobilePage />;
   return <ReportDayPage />;
 };

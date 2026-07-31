@@ -4,7 +4,7 @@ import { SysButton } from '../../components/form';
 import { PageHeader } from '../../components/PageHeader';
 import { SectionHead } from '../../components/SectionHead';
 import { SYS } from '../../theme/tokens';
-import { useAuth } from '../../auth/AuthContext';
+import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useArchive } from '../../state/ArchiveContext';
 import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type MediaKind } from '../../mocks/archive';
 import { UploadDocModal } from '../../components/archive/UploadDocModal';
@@ -50,7 +50,7 @@ const EmptySection = ({ icon, title, hint, cta }: { icon: string; title: string;
 );
 
 export const ArchivePage = () => {
-  const { user } = useAuth();
+  const role = useObjectRole();
   const { keyFiles, allFiles, media, removeFile, updateFile, toggleHidden, updateMedia, removeMedia } = useArchive();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('Все типы');
@@ -60,8 +60,8 @@ export const ArchivePage = () => {
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [deletingFile, setDeletingFile] = useState<ArchiveFile | null>(null);
 
-  if (!user) return null;
-  const canManage = user.role === 'admin' || user.role === 'project_manager';
+  if (!role) return null;
+  const canManage = role === 'admin' || role === 'project_manager';
 
   const scopedFiles = canManage ? allFiles : allFiles.filter((f) => !f.clientHidden);
   const sortedMedia = [...media].sort((a, b) => parseShortDate(b.date) - parseShortDate(a.date));

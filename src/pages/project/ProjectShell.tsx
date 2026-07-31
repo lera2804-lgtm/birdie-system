@@ -1,19 +1,25 @@
 import { Navigate, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { MonoLabel, OrlovMark, RoleBadge } from '../../components/primitives';
-import { SYS } from '../../theme/tokens';
+import { SYS, type Role } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
-import { NAV_ITEMS, PROJECT_INFO } from '../../mocks/project';
-import { NotFoundPage } from '../system/NotFoundPage';
+import { NAV_ITEMS } from '../../mocks/project';
 import { NoAccessPage } from '../system/NoAccessPage';
 import { StagesProvider } from '../../state/StagesContext';
 import { ReportsProvider } from '../../state/ReportsContext';
 import { ArchiveProvider } from '../../state/ArchiveContext';
 import { ProjectDetailsProvider, useProjectDetails } from '../../state/ProjectDetailsContext';
+import { ObjectRoleProvider, useResolveObjectRole } from '../../state/ObjectRoleContext';
 
 const activeIdFromPath = (pathname: string, projectCode: string) => {
   const rest = pathname.replace(`/${projectCode}`, '').replace(/^\//, '').split('/')[0];
   return NAV_ITEMS.find((it) => it.path === rest)?.id ?? null;
 };
+
+const LoadingScreen = () => (
+  <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: SYS.paper, color: SYS.muted, fontSize: 13 }}>
+    Загрузка…
+  </div>
+);
 
 const SidebarInfo = () => {
   const { details } = useProjectDetails();
@@ -52,13 +58,12 @@ const SidebarInfo = () => {
   );
 };
 
-const ProjectSidebar = ({ active }: { active: string | null }) => {
-  const { user, logout } = useAuth();
+const ProjectSidebar = ({ active, role }: { active: string | null; role: Role }) => {
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const { projectCode } = useParams();
-  const info = PROJECT_INFO[projectCode!];
-  if (!user) return null;
-  const items = NAV_ITEMS.filter((it) => it.roles.includes(user.role));
+  const { details } = useProjectDetails();
+  const items = NAV_ITEMS.filter((it) => it.roles.includes(role));
 
   return (
     <aside
@@ -77,8 +82,8 @@ const ProjectSidebar = ({ active }: { active: string | null }) => {
         >
           <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>← назад к объектам</MonoLabel>
         </a>
-        <div style={{ marginTop: 8, fontSize: 17, fontWeight: 500, letterSpacing: '-0.005em', lineHeight: 1.3 }}>{info.code}</div>
-        <div style={{ marginTop: 4, fontSize: 11.5, color: SYS.muted, lineHeight: 1.4 }}>{info.title}</div>
+        <div style={{ marginTop: 8, fontSize: 17, fontWeight: 500, letterSpacing: '-0.005em', lineHeight: 1.3 }}>{projectCode}</div>
+        <div style={{ marginTop: 4, fontSize: 11.5, color: SYS.muted, lineHeight: 1.4 }}>{details.address}</div>
       </div>
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, margin: '0 -24px' }}>
@@ -111,7 +116,7 @@ const ProjectSidebar = ({ active }: { active: string | null }) => {
       <SidebarInfo />
 
       <div style={{ marginTop: 'auto', paddingTop: 18, borderTop: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <RoleBadge role={user.role} size="sm" />
+        <RoleBadge role={role} size="sm" />
         <a href="/login" onClick={(e) => { e.preventDefault(); logout(); navigate('/login'); }} style={{ fontSize: 11, color: SYS.muted, textDecoration: 'none' }}>выход ↗</a>
       </div>
     </aside>
@@ -122,46 +127,58 @@ export const ProjectShell = () => {
   const { user } = useAuth();
   const { projectCode } = useParams();
   const location = useLocation();
+  const { role, loading } = useResolveObjectRole(projectCode);
 
   if (!user) return null;
-  if (!projectCode || !PROJECT_INFO[projectCode]) return <NotFoundPage />;
+  if (!projectCode) return <Navigate to="/" replace />;
+  if (loading) return <LoadingScreen />;
+  // Not a member of this object (or it doesn't exist) — don't distinguish
+  // the two, just send them back to what they can actually see.
+  if (!role) return <Navigate to="/" replace />;
 
   const active = activeIdFromPath(location.pathname, projectCode);
   const item = NAV_ITEMS.find((it) => it.id === active);
-  if (item && !item.roles.includes(user.role)) return <NoAccessPage role={user.role} />;
+  if (item && !item.roles.includes(role)) return <NoAccessPage role={role} />;
+
+  const roleValue = { role, loading };
 
   // Object Manager's whole workflow is mobile, full-screen pages with their
   // own chrome (see sys-reports.jsx Sys_ReportsMobile) — no desktop sidebar.
-  if (user.role === 'site_manager') {
+  if (role === 'site_manager') {
     return (
-      <StagesProvider projectCode={projectCode}>
-        <ReportsProvider projectCode={projectCode}>
-          <Outlet />
-        </ReportsProvider>
-      </StagesProvider>
+      <ObjectRoleProvider value={roleValue}>
+        <StagesProvider projectCode={projectCode}>
+          <ReportsProvider projectCode={projectCode}>
+            <Outlet />
+          </ReportsProvider>
+        </StagesProvider>
+      </ObjectRoleProvider>
     );
   }
 
   return (
-    <StagesProvider projectCode={projectCode}>
-      <ReportsProvider projectCode={projectCode}>
-        <ArchiveProvider projectCode={projectCode}>
-          <ProjectDetailsProvider projectCode={projectCode}>
-            <div style={{ width: '100%', minHeight: '100vh', display: 'grid', gridTemplateColumns: '240px 1fr', background: SYS.bg, color: SYS.ink }}>
-              <ProjectSidebar active={active} />
-              <Outlet />
-            </div>
-          </ProjectDetailsProvider>
-        </ArchiveProvider>
-      </ReportsProvider>
-    </StagesProvider>
+    <ObjectRoleProvider value={roleValue}>
+      <StagesProvider projectCode={projectCode}>
+        <ReportsProvider projectCode={projectCode}>
+          <ArchiveProvider projectCode={projectCode}>
+            <ProjectDetailsProvider projectCode={projectCode}>
+              <div style={{ width: '100%', minHeight: '100vh', display: 'grid', gridTemplateColumns: '240px 1fr', background: SYS.bg, color: SYS.ink }}>
+                <ProjectSidebar active={active} role={role} />
+                <Outlet />
+              </div>
+            </ProjectDetailsProvider>
+          </ArchiveProvider>
+        </ReportsProvider>
+      </StagesProvider>
+    </ObjectRoleProvider>
   );
 };
 
 export const ProjectIndexRedirect = () => {
   const { user } = useAuth();
   const { projectCode } = useParams();
-  if (!user) return null;
-  const first = NAV_ITEMS.find((it) => it.roles.includes(user.role));
+  const { role, loading } = useResolveObjectRole(projectCode);
+  if (!user || loading) return null;
+  const first = NAV_ITEMS.find((it) => role && it.roles.includes(role));
   return <Navigate to={`/${projectCode}/${first?.path ?? 'reports'}`} replace />;
 };

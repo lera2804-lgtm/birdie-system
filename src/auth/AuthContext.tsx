@@ -1,69 +1,96 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Role } from '../theme/tokens';
+import { supabase } from '../lib/supabaseClient';
 
-export interface MockUser {
+export interface AuthUser {
+  id: string;
   email: string;
-  password: string;
-  role: Role;
   name: string;
+  isAdmin: boolean;
 }
 
-// No backend yet — these are the same demo identities the design mocks
-// reference by email (login screen defaultValue, invite screen, catalog
-// display names). Password is the same for all so the "wrong password"
-// error state can be demoed by typing anything else.
-export const MOCK_USERS: MockUser[] = [
-  { email: 'orlov@orlov.red', password: 'demo1234', role: 'admin', name: 'Орлов А.' },
-  { email: 'a.chernyshev@orlov.red', password: 'demo1234', role: 'project_manager', name: 'Чернышёв А.' },
-  { email: 'brigada2@orlov.red', password: 'demo1234', role: 'site_manager', name: 'Иванов И.' },
-  { email: 'invest@example.com', password: 'demo1234', role: 'client', name: 'Иванов А.К.' },
-];
-
 interface AuthState {
-  user: MockUser | null;
+  user: AuthUser | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-  loginAs: (role: Role) => void;
-  acceptInvite: (name: string, email: string, password: string) => void;
-  logout: () => void;
+  signUp: (name: string, email: string, password: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const STORAGE_KEY = 'birdie.auth.user';
+const loadProfile = async (id: string, fallbackEmail: string): Promise<AuthUser> => {
+  const { data } = await supabase.from('profiles').select('name, email, is_admin').eq('id', id).maybeSingle();
+  return {
+    id,
+    email: data?.email ?? fallbackEmail,
+    name: data?.name || fallbackEmail,
+    isAdmin: data?.is_admin ?? false,
+  };
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<MockUser | null>(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as MockUser) : null;
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    else localStorage.removeItem(STORAGE_KEY);
-  }, [user]);
+    let cancelled = false;
+
+    supabase.auth.getSession().then(async ({ data }) => {
+      const session = data.session;
+      if (!session) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+      const profile = await loadProfile(session.user.id, session.user.email ?? '');
+      if (!cancelled) {
+        setUser(profile);
+        setLoading(false);
+      }
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session) {
+        setUser(null);
+        return;
+      }
+      const profile = await loadProfile(session.user.id, session.user.email ?? '');
+      setUser(profile);
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   const value = useMemo<AuthState>(
     () => ({
       user,
+      loading,
       login: async (email, password) => {
-        await new Promise((r) => setTimeout(r, 500));
-        const found = MOCK_USERS.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-        if (!found || found.password !== password) {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) {
           return { ok: false, error: 'Неверный email или пароль. Проверьте раскладку и Caps Lock.' };
         }
-        setUser(found);
         return { ok: true };
       },
-      loginAs: (role) => {
-        const found = MOCK_USERS.find((u) => u.role === role);
-        if (found) setUser(found);
+      signUp: async (name, email, password) => {
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { data: { name: name.trim() } },
+        });
+        if (error) {
+          return { ok: false, error: error.message };
+        }
+        return { ok: true };
       },
-      acceptInvite: (name, email, _password) => {
-        setUser({ email: email || 'invest@example.com', password: _password, role: 'client', name: name || 'Иванов А.К.' });
+      logout: async () => {
+        await supabase.auth.signOut();
+        setUser(null);
       },
-      logout: () => setUser(null),
     }),
-    [user],
+    [user, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

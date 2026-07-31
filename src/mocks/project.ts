@@ -1,22 +1,3 @@
-export interface ProjectInfo {
-  code: string;
-  title: string;
-  address: string;
-}
-
-export const PROJECT_INFO: Record<string, ProjectInfo> = {
-  'BIRDIE-10': {
-    code: 'BIRDIE-10',
-    title: 'Заречье · Кунцево-2, уч. 10',
-    address: 'МО, Одинцовский р-н, р.п. Заречье, «Кунцево-2», уч. 10',
-  },
-  'BIRDIE-75': {
-    code: 'BIRDIE-75',
-    title: 'Мытищи · Клязьминское вдхр.',
-    address: 'г. Мытищи, территория Туристический Пансионат Клязьминское водохранилище',
-  },
-};
-
 export interface NavItem {
   id: 'dash' | 'reports' | 'docs' | 'settings';
   code: string;

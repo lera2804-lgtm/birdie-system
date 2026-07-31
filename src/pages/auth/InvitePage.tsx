@@ -8,19 +8,28 @@ import { useAuth } from '../../auth/AuthContext';
 export const InvitePage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { acceptInvite } = useAuth();
+  const { signUp } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('invest@example.com');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const expired = token === 'expired' || token === 'used';
   const canSubmit = name.trim() && email.trim() && password.length >= 6;
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
-    acceptInvite(name, email, password);
+    if (!canSubmit || loading) return;
+    setLoading(true);
+    setError(null);
+    const res = await signUp(name, email, password);
+    setLoading(false);
+    if (!res.ok) {
+      setError(res.error);
+      return;
+    }
     navigate('/', { replace: true });
   };
 
@@ -77,8 +86,14 @@ export const InvitePage = () => {
           <SysField icon="⚿" placeholder="Придумайте пароль" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
         </div>
 
+        {error && (
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, color: SYS.red, fontSize: 12.5 }}>
+            <span>⚠</span> {error}
+          </div>
+        )}
+
         <div style={{ marginTop: 22 }}>
-          <SysButton type="submit" disabled={!canSubmit}>Создать доступ и войти</SysButton>
+          <SysButton type="submit" disabled={!canSubmit} loading={loading}>{loading ? 'Создаём доступ…' : 'Создать доступ и войти'}</SysButton>
         </div>
 
         <p style={{ marginTop: 16, fontSize: 11, color: SYS.muted, lineHeight: 1.5 }}>

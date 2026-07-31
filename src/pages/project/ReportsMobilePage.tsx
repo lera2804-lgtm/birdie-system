@@ -4,6 +4,7 @@ import { OrlovMark, MonoLabel, RoleBadge, Pill } from '../../components/primitiv
 import { SysButton } from '../../components/form';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
+import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useReports } from '../../state/ReportsContext';
 import { monthGrid, monthLabel, shiftMonth, REPORT_MONTH, REPORT_TODAY, addDays, formatShort } from '../../mocks/reports';
 import { OfflineBanner } from '../../components/OfflineBanner';
@@ -13,6 +14,7 @@ import { EditReportMobileView } from '../../components/reports/EditReportMobileV
 
 export const ReportsMobilePage = () => {
   const { user, logout } = useAuth();
+  const role = useObjectRole();
   const { projectCode, month: monthParam } = useParams();
   const navigate = useNavigate();
   const { reports } = useReports();
@@ -20,7 +22,7 @@ export const ReportsMobilePage = () => {
   const [composingDate, setComposingDate] = useState<string | null>(null);
   const [editingDate, setEditingDate] = useState<string | null>(null);
 
-  if (!user || !projectCode) return null;
+  if (!user || !role || !projectCode) return null;
   const month = monthParam || REPORT_MONTH;
   const yesterday = addDays(REPORT_TODAY, -1);
 
@@ -37,7 +39,7 @@ export const ReportsMobilePage = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <OrlovMark size={10} />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-            <RoleBadge role={user.role} size="sm" />
+            <RoleBadge role={role} size="sm" />
             <a
               href="/login"
               onClick={(e) => { e.preventDefault(); logout(); navigate('/login'); }}

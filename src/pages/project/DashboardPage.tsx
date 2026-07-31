@@ -6,28 +6,28 @@ import { PageHeader } from '../../components/PageHeader';
 import { ContractStageCard } from '../../components/dashboard/ContractStageCard';
 import { EditStageModal } from '../../components/dashboard/EditStageModal';
 import { NewStageModal } from '../../components/dashboard/NewStageModal';
-import { useAuth } from '../../auth/AuthContext';
+import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useStages } from '../../state/StagesContext';
-import { PROJECT_INFO } from '../../mocks/project';
+import { useProjectDetails } from '../../state/ProjectDetailsContext';
 
 export const DashboardPage = () => {
-  const { user } = useAuth();
+  const role = useObjectRole();
   const { projectCode } = useParams();
   const { stages } = useStages();
+  const { details } = useProjectDetails();
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  if (!user || !projectCode) return null;
-  const canEdit = user.role === 'admin' || user.role === 'project_manager';
-  const info = PROJECT_INFO[projectCode];
+  if (!role || !projectCode) return null;
+  const canEdit = role === 'admin' || role === 'project_manager';
   const editingStage = stages.find((s) => s.code === editingCode) ?? null;
 
   return (
     <main style={{ padding: '36px 56px 56px' }}>
       <PageHeader
         kicker="дашборд объекта"
-        title={info.code}
-        meta={info.address}
+        title={projectCode}
+        meta={details.address}
         right={
           <>
             {!canEdit && <Pill tone="ghost">только просмотр</Pill>}
