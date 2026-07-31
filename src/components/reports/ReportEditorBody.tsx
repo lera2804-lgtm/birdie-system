@@ -9,7 +9,7 @@ let seq = 0;
 const nid = (p: string) => `${p}${Date.now()}-${++seq}`;
 
 export const ReportEditorBody = ({
-  draft, setDraft, allowDeskType, allowBackOffice, stages, objectCode, invalidTaskIds, onRequestDeleteTask, addTaskButtonStyle = 'link',
+  draft, setDraft, allowDeskType, allowBackOffice, stages, objectCode, invalidTaskIds, onRequestDeleteTask,
 }: {
   draft: DayReport;
   setDraft: (updater: (d: DayReport) => DayReport) => void;
@@ -19,7 +19,6 @@ export const ReportEditorBody = ({
   objectCode: string;
   invalidTaskIds?: Set<string>;
   onRequestDeleteTask: (taskId: string) => void;
-  addTaskButtonStyle?: 'link' | 'button';
 }) => {
   const updateTask = (id: string, patch: Partial<ReportTask>) =>
     setDraft((d) => ({ ...d, tasks: d.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)) }));
@@ -30,12 +29,7 @@ export const ReportEditorBody = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
-          <MonoLabel color={SYS.ink} style={{ fontSize: 10 }}>задачи дня</MonoLabel>
-          {addTaskButtonStyle === 'link' && (
-            <span onClick={addTask} style={{ fontSize: 11, color: SYS.ink, cursor: 'pointer' }}>+ добавить задачу</span>
-          )}
-        </div>
+        <MonoLabel color={SYS.ink} style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>задачи дня</MonoLabel>
         <div style={{ fontSize: 11.5, color: SYS.muted, lineHeight: 1.4, marginBottom: 12 }}>
           Публикуется сразу — клиент видит без модерации.
         </div>
@@ -55,11 +49,9 @@ export const ReportEditorBody = ({
           />
         ))}
 
-        {addTaskButtonStyle === 'button' && (
-          <div style={{ marginBottom: 4 }}>
-            <SysButton tone="ghost" type="button" onClick={addTask}>+ Добавить задачу</SysButton>
-          </div>
-        )}
+        <div style={{ marginBottom: 4 }}>
+          <SysButton tone="ghost" type="button" onClick={addTask}>+ Добавить задачу</SysButton>
+        </div>
       </div>
 
       <div>

@@ -129,7 +129,11 @@ export const ArchivePage = () => {
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.ink2 }}>{f.album}</div>
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.muted, textAlign: 'right' }}>{f.date}</div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <span style={{ padding: '11px 22px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Скачать</span>
+                    {f.driveUrl ? (
+                      <a href={f.driveUrl} target="_blank" rel="noreferrer" style={{ padding: '11px 22px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Посмотреть</a>
+                    ) : (
+                      <span style={{ padding: '11px 22px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Скачать</span>
+                    )}
                   </div>
                 </div>
               ))}

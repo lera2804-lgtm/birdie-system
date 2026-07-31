@@ -6,6 +6,7 @@ export interface KeyFile {
   status: KeyFileStatus;
   album: string;
   date: string;
+  driveUrl?: string;
 }
 
 export interface ArchiveFile {

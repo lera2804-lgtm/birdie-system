@@ -136,7 +136,7 @@ export const ReportDayPage = () => {
                 <SectionHead
                   kicker={sp.code}
                   title={sp.title}
-                  action={dayNum !== null && <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{dayNum}-й день проекта</MonoLabel>}
+                  action={dayNum !== null && dayNum > 0 && <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{dayNum}-й день проекта</MonoLabel>}
                 />
                 <div style={{ padding: '0 24px 4px' }}>
                   {tasks.map((t, i) => (

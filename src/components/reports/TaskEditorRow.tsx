@@ -4,6 +4,7 @@ import { SysLabeledField, SysSelectField } from '../form';
 import { SYS } from '../../theme/tokens';
 import type { ReportTask } from '../../mocks/reports';
 import { uploadReportPhoto } from '../../lib/storage';
+import { useToasts } from '../../state/ToastContext';
 
 const MAX_PHOTOS = 4;
 
@@ -21,6 +22,7 @@ export const TaskEditorRow = ({
   nameError?: boolean;
 }) => {
   const fileRef = useRef<HTMLInputElement>(null);
+  const { addToast } = useToasts();
   const isField = task.kind === 'field';
 
   const addFiles = async (files: FileList | null) => {
@@ -36,12 +38,9 @@ export const TaskEditorRow = ({
     onChange({ photos: working });
     for (let i = 0; i < picked.length; i++) {
       const { url, error } = await uploadReportPhoto(objectCode, reportDate, picked[i]);
-      working = working.map((p) => (p.id === pendingIds[i] ? { id: p.id, url: url ?? '', uploading: false } : p));
+      working = working.map((p) => (p.id === pendingIds[i] ? { id: p.id, url: url ?? '', uploading: false, error: error ?? undefined } : p));
       onChange({ photos: working });
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.error('Photo upload failed:', error);
-      }
+      if (error) addToast('error', `Не удалось загрузить фото: ${error}`);
     }
   };
 
@@ -92,9 +91,13 @@ export const TaskEditorRow = ({
             <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>Фото / видео</MonoLabel>
             <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
               {task.photos.map((p) => (
-                <div key={p.id} style={{ position: 'relative', aspectRatio: '1', background: '#eae7dc', overflow: 'hidden' }}>
+                <div key={p.id} title={p.error} style={{ position: 'relative', aspectRatio: '1', background: p.error ? '#fbeae6' : '#eae7dc', overflow: 'hidden' }}>
                   {p.uploading ? (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: SYS.muted }}>загрузка…</div>
+                  ) : p.error ? (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, color: SYS.red, textAlign: 'center', padding: 4 }}>
+                      <span style={{ fontSize: 16 }}>⚠</span> ошибка загрузки
+                    </div>
                   ) : p.url ? (
                     <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   ) : null}

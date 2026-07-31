@@ -61,7 +61,7 @@ export const ReportDayMobilePage = () => {
                     <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>{sp.code}</MonoLabel>
                     <div style={{ marginTop: 3, fontSize: 14.5, fontWeight: 500 }}>{sp.title}</div>
                   </div>
-                  {dayNum !== null && <MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>{dayNum}-й день</MonoLabel>}
+                  {dayNum !== null && dayNum > 0 && <MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>{dayNum}-й день</MonoLabel>}
                 </div>
                 {tasks.map((t) => (
                   <div key={t.id} style={{ border: `1px solid ${SYS.line}`, padding: 14, marginBottom: 12 }}>

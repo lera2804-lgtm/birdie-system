@@ -28,7 +28,7 @@ export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; ca
         <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>таймлайн проекта</MonoLabel>
         {s.updatedOn && <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>обновлено {shortDate(s.updatedOn)}</MonoLabel>}
       </div>
-      {s.start && s.handover ? (
+      {s.start && s.handover && s.handover >= s.start ? (
         <>
           <StageTimeline s={s} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 12, fontSize: 11, color: SYS.muted }}>
@@ -37,6 +37,10 @@ export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; ca
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 0, height: 12, borderLeft: `2px dashed ${SYS.red}` }} /> сегодня</span>
           </div>
         </>
+      ) : s.start && s.handover ? (
+        <div style={{ border: `1px dashed ${SYS.red}`, padding: '18px 20px', fontSize: 12.5, color: SYS.red }}>
+          Дата сдачи раньше даты старта — проверьте сроки в редактировании проекта.
+        </div>
       ) : (
         <div style={{ border: `1px dashed ${SYS.line}`, padding: '18px 20px', fontSize: 12.5, color: SYS.muted }}>
           Сроки ещё не заданы — укажите даты старта и сдачи в редактировании проекта.

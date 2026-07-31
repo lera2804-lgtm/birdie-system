@@ -49,6 +49,13 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
     }, 150);
   };
 
+  const [dragOver, setDragOver] = useState(false);
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    pickFile(e.dataTransfer.files?.[0]);
+  };
+
   const [submitting, setSubmitting] = useState(false);
   const canSubmit = title.trim() && createdDate.trim() && (uploadState === 'done' || driveUrl.trim()) && !submitting;
 
@@ -111,7 +118,13 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
           ) : (
             <div
               onClick={() => fileRef.current?.click()}
-              style={{ marginTop: 8, border: `1px dashed ${SYS.line}`, background: '#f7f6f2', height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+              style={{
+                marginTop: 8, border: `1px dashed ${dragOver ? SYS.red : SYS.line}`, background: dragOver ? '#fbf1ee' : '#f7f6f2',
+                height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer',
+              }}
             >
               {uploadState === 'done' ? (
                 <span style={{ fontSize: 13, color: SYS.ink }}>✓ {fileName}</span>

@@ -60,7 +60,6 @@ export const EditReportMobileView = ({ date, report, onClose }: { date: string; 
           stages={stages}
           objectCode={projectCode ?? ''}
           onRequestDeleteTask={setDeletingId}
-          addTaskButtonStyle="button"
         />
       </div>
 

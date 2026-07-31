@@ -53,7 +53,6 @@ export const NewReportMobileView = ({ date, existing, onClose }: { date: string;
           stages={stages}
           objectCode={projectCode ?? ''}
           onRequestDeleteTask={setDeletingId}
-          addTaskButtonStyle="button"
         />
       </div>
 

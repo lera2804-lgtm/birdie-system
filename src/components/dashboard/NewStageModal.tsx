@@ -55,7 +55,8 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
     setWorkItems(next);
   };
 
-  const canSubmit = code.trim() && title.trim() && !submitting;
+  const dateRangeInvalid = !!(start && handover && handover < start);
+  const canSubmit = code.trim() && title.trim() && !submitting && !dateRangeInvalid;
 
   const submit = async () => {
     if (!canSubmit) return;
@@ -96,9 +97,16 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
       </div>
 
       <div style={{ padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 28 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <SysLabeledField label="Дата старта" type="date" value={start} onChange={(e: any) => setStart(e.target.value)} />
-          <SysLabeledField label="Плановая сдача" type="date" hint="можно уточнить позже" value={handover} onChange={(e: any) => setHandover(e.target.value)} />
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <SysLabeledField label="Дата старта" type="date" value={start} error={dateRangeInvalid} onChange={(e: any) => setStart(e.target.value)} />
+            <SysLabeledField label="Плановая сдача" type="date" hint="можно уточнить позже" value={handover} error={dateRangeInvalid} onChange={(e: any) => setHandover(e.target.value)} />
+          </div>
+          {dateRangeInvalid && (
+            <div style={{ marginTop: 8, fontSize: 11.5, color: SYS.red, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>⚠</span> Дата сдачи не может быть раньше даты старта
+            </div>
+          )}
         </div>
 
         <div>

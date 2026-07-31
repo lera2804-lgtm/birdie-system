@@ -76,6 +76,7 @@ export interface Photo {
   id: string;
   url: string;
   uploading?: boolean;
+  error?: string;
 }
 
 export interface ReportTask {

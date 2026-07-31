@@ -18,6 +18,14 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
   const [driveUrl, setDriveUrl] = useState('');
   const [createdDate, setCreatedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
+  const [dragOver, setDragOver] = useState(false);
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) setFileName(f.name);
+  };
+
   const [submitting, setSubmitting] = useState(false);
   const canSubmit = title.trim() && createdDate.trim() && !submitting;
 
@@ -56,7 +64,13 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
           <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>Обложка / файл</MonoLabel>
           <div
             onClick={() => fileRef.current?.click()}
-            style={{ marginTop: 8, border: `1px dashed ${SYS.line}`, background: '#f7f6f2', height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer' }}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
+            style={{
+              marginTop: 8, border: `1px dashed ${dragOver ? SYS.red : SYS.line}`, background: dragOver ? '#fbf1ee' : '#f7f6f2',
+              height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer',
+            }}
           >
             {fileName ? (
               <span style={{ fontSize: 13, color: SYS.ink }}>✓ {fileName}</span>

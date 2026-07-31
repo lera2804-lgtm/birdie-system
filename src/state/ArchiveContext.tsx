@@ -62,7 +62,7 @@ const mediaFromRow = (r: MediaRow): MediaItem => ({
 const keyFilesFrom = (allFiles: ArchiveFile[]): KeyFile[] =>
   allFiles
     .filter((f) => f.key)
-    .map((f) => ({ id: f.id, name: f.name, status: f.keyStatus ?? 'на согласовании', album: `альбом ${f.album} / ${f.variant}`, date: f.created }));
+    .map((f) => ({ id: f.id, name: f.name, status: f.keyStatus ?? 'на согласовании', album: `альбом ${f.album} / ${f.variant}`, date: f.created, driveUrl: f.driveUrl }));
 
 export const ArchiveProvider = ({ projectCode, children }: { projectCode: string; children: ReactNode }) => {
   const [allFiles, setAllFiles] = useState<ArchiveFile[]>([]);

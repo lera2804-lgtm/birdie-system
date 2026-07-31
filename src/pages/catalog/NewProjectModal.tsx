@@ -63,6 +63,13 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
     setCoverPreview(URL.createObjectURL(f));
   };
 
+  const [dragOver, setDragOver] = useState(false);
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    onFile(e.dataTransfer.files?.[0]);
+  };
+
   const updatePerson = (gi: number, pi: number, email: string) => {
     setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: g.people.map((p, j) => (j === pi ? { ...p, email } : p)) } : g)));
   };
@@ -149,8 +156,11 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
           <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>Фото-заставка объекта</MonoLabel>
           <div
             onClick={() => fileRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={onDrop}
             style={{
-              marginTop: 8, border: `1px dashed ${SYS.line}`, background: coverPreview ? undefined : '#f7f6f2',
+              marginTop: 8, border: `1px dashed ${dragOver ? SYS.red : SYS.line}`, background: coverPreview ? undefined : (dragOver ? '#fbf1ee' : '#f7f6f2'),
               height: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
               cursor: 'pointer', overflow: 'hidden', position: 'relative',
             }}
