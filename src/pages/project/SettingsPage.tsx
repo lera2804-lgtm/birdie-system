@@ -88,7 +88,7 @@ export const SettingsPage = () => {
   return (
     <main style={{ padding: '36px 56px 56px' }}>
       <PageHeader
-        kicker="настройки проекта"
+        kicker="настройки объекта"
         title={projectCode}
         right={
           <>
@@ -135,7 +135,7 @@ export const SettingsPage = () => {
 
       <SettingsCard
         title="Участники и роли"
-        sub="приглашение по email · роль привязана к паре пользователь + проект"
+        sub="приглашение по email · роль привязана к паре пользователь + объект"
         action={canEdit && <SysButton tone="fill" full={false} small type="button" onClick={() => setInvitingOpen(true)}>+ Пригласить участника</SysButton>}
       >
         <div style={{ display: 'grid', gridTemplateColumns: '170px 1fr 220px 150px 90px', gap: 18, padding: '12px 24px', background: SYS.paper }}>

@@ -157,7 +157,7 @@ export const CatalogPage = () => {
       <div style={{ padding: '40px 48px 56px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 28 }}>
           <div>
-            <MonoLabel color={SYS.red}>{!user.isAdmin ? 'каталог ваших объектов' : 'каталог проектов'}</MonoLabel>
+            <MonoLabel color={SYS.red}>{!user.isAdmin ? 'каталог ваших объектов' : 'каталог объектов'}</MonoLabel>
             <h1 style={{ margin: '10px 0 0', fontSize: 34, fontWeight: 500, letterSpacing: '-0.01em' }}>{heading}</h1>
           </div>
           {user.isAdmin && (
@@ -197,7 +197,7 @@ export const CatalogPage = () => {
             </div>
             {!user.isAdmin && objects.length === 1 && (
               <div style={{ marginTop: 28, padding: '16px 20px', border: `1px solid ${SYS.line}`, background: SYS.paper, fontSize: 12.5, color: SYS.muted, lineHeight: 1.5, maxWidth: 560 }}>
-                У вас один проект — при следующем входе система сразу откроет его, минуя каталог.
+                У вас один объект — при следующем входе система сразу откроет его, минуя каталог.
               </div>
             )}
           </>

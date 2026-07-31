@@ -32,7 +32,7 @@ const SidebarInfo = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       {hasAbout && (
         <div>
-          <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>о проекте</MonoLabel>
+          <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>об объекте</MonoLabel>
           {details.address && (
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 500 }}>Адрес:</div>

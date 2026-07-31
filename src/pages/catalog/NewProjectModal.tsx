@@ -147,7 +147,7 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
               <>
                 <span style={{ fontSize: 20, color: SYS.muted }}>⤒</span>
                 <span style={{ fontSize: 12.5, color: SYS.ink2 }}>Перетащите фото сюда или нажмите, чтобы загрузить</span>
-                <span style={{ fontSize: 11, color: SYS.muted }}>JPG, PNG · показывается в каталоге проектов</span>
+                <span style={{ fontSize: 11, color: SYS.muted }}>JPG, PNG · показывается в каталоге объектов</span>
               </>
             )}
           </div>
