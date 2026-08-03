@@ -8,29 +8,36 @@ import { inviteMember } from '../../lib/invite';
 import { useToasts } from '../../state/ToastContext';
 
 interface Person {
+  name: string;
   email: string;
 }
 
 const ROLE_GROUPS_INITIAL: { role: Role; hint: string; people: Person[] }[] = [
-  { role: 'project_manager', hint: 'управляет проектами и составом работ', people: [{ email: '' }] },
-  { role: 'site_manager', hint: 'ведёт отчёты с площадки', people: [{ email: '' }] },
-  { role: 'client', hint: 'только просмотр', people: [{ email: '' }] },
+  { role: 'project_manager', hint: 'управляет проектами и составом работ', people: [{ name: '', email: '' }] },
+  { role: 'site_manager', hint: 'ведёт отчёты с площадки', people: [{ name: '', email: '' }] },
+  { role: 'client', hint: 'только просмотр', people: [{ name: '', email: '' }] },
 ];
 
 const AssignRoleRow = ({
-  role, first, person, onChange, onRemove,
+  role, first, person, onChangeName, onChangeEmail, onRemove,
 }: {
   role: Role; first: boolean; person: Person;
-  onChange: (email: string) => void; onRemove: () => void;
+  onChangeName: (name: string) => void; onChangeEmail: (email: string) => void; onRemove: () => void;
 }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr 20px', gap: 12, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${SYS.line}` }}>
+  <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr 1fr 20px', gap: 12, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${SYS.line}` }}>
     {first ? <RoleBadge role={role} size="sm" /> : <span />}
+    <input
+      placeholder="Имя (опционально)"
+      value={person.name}
+      onChange={(e) => onChangeName(e.target.value)}
+      style={{ border: `1px solid ${SYS.line}`, background: SYS.paper, padding: '11px 14px', fontFamily: 'inherit', fontSize: 14, color: SYS.ink, outline: 'none', minWidth: 0 }}
+    />
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${SYS.line}`, background: SYS.paper, padding: '11px 14px' }}>
       <span style={{ color: SYS.muted, fontSize: 14 }}>✉</span>
       <input
         placeholder="Email для приглашения"
         value={person.email}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChangeEmail(e.target.value)}
         style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 14, color: SYS.ink, minWidth: 0 }}
       />
     </div>
@@ -65,14 +72,17 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
     onFile(e.dataTransfer.files?.[0]);
   };
 
-  const updatePerson = (gi: number, pi: number, email: string) => {
+  const updatePersonName = (gi: number, pi: number, name: string) => {
+    setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: g.people.map((p, j) => (j === pi ? { ...p, name } : p)) } : g)));
+  };
+  const updatePersonEmail = (gi: number, pi: number, email: string) => {
     setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: g.people.map((p, j) => (j === pi ? { ...p, email } : p)) } : g)));
   };
   const removePerson = (gi: number, pi: number) => {
     setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: g.people.filter((_, j) => j !== pi) } : g)));
   };
   const addPerson = (gi: number) => {
-    setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: [...g.people, { email: '' }] } : g)));
+    setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: [...g.people, { name: '', email: '' }] } : g)));
   };
 
   const canSubmit = title.trim().length > 0 && !submitting;
@@ -108,10 +118,10 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
       return;
     }
 
-    const invites = groups.flatMap((g) => g.people.filter((p) => p.email.trim()).map((p) => ({ role: g.role, email: p.email.trim() })));
+    const invites = groups.flatMap((g) => g.people.filter((p) => p.email.trim()).map((p) => ({ role: g.role, email: p.email.trim(), name: p.name.trim() || undefined })));
     let failed = 0;
     for (const inv of invites) {
-      const { error: inviteError } = await inviteMember(code, inv.role, inv.email);
+      const { error: inviteError } = await inviteMember(code, inv.role, inv.email, inv.name);
       if (inviteError) failed++;
     }
 
@@ -201,7 +211,8 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
                     role={g.role}
                     first={pi === 0}
                     person={p}
-                    onChange={(email) => updatePerson(gi, pi, email)}
+                    onChangeName={(name) => updatePersonName(gi, pi, name)}
+                    onChangeEmail={(email) => updatePersonEmail(gi, pi, email)}
                     onRemove={() => removePerson(gi, pi)}
                   />
                 ))}

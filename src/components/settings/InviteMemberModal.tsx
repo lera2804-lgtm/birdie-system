@@ -6,6 +6,7 @@ import { inviteMember } from '../../lib/invite';
 
 export const InviteMemberModal = ({ objectCode, onClose, onInvited }: { objectCode: string; onClose: () => void; onInvited: () => void }) => {
   const [role, setRole] = useState<Role>('site_manager');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +16,7 @@ export const InviteMemberModal = ({ objectCode, onClose, onInvited }: { objectCo
     if (!email.trim() || sending) return;
     setSending(true);
     setError(null);
-    const { error: inviteError } = await inviteMember(objectCode, role, email.trim());
+    const { error: inviteError } = await inviteMember(objectCode, role, email.trim(), name.trim() || undefined);
     setSending(false);
     if (inviteError) {
       setError(inviteError);
@@ -43,6 +44,12 @@ export const InviteMemberModal = ({ objectCode, onClose, onInvited }: { objectCo
             { value: 'site_manager', label: 'Object Manager' },
             { value: 'client', label: 'Client' },
           ]}
+        />
+        <SysLabeledField
+          label="Имя (опционально)"
+          placeholder="напр. Иван Иванов"
+          value={name}
+          onChange={(e: any) => { setName(e.target.value); setSent(false); }}
         />
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>

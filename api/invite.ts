@@ -24,7 +24,7 @@ export default async function handler(req: Request): Promise<Response> {
   const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '');
   if (!token) return json({ error: 'Не авторизовано' }, 401);
 
-  let body: { objectCode?: string; role?: string; email?: string };
+  let body: { objectCode?: string; role?: string; email?: string; name?: string };
   try {
     body = await req.json();
   } catch {
@@ -33,6 +33,7 @@ export default async function handler(req: Request): Promise<Response> {
   const objectCode = body.objectCode?.trim();
   const role = body.role;
   const email = body.email?.trim().toLowerCase();
+  const name = body.name?.trim();
   if (!objectCode || !role || !email) return json({ error: 'Не хватает данных' }, 400);
   if (!ALLOWED_ROLES.includes(role)) return json({ error: 'Недопустимая роль' }, 400);
 
@@ -64,7 +65,9 @@ export default async function handler(req: Request): Promise<Response> {
   let userId = existingProfile?.id;
 
   if (!userId) {
-    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email);
+    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      data: name ? { name } : undefined,
+    });
     if (inviteError || !invited.user) {
       return json({ error: inviteError?.message ?? 'Не удалось пригласить пользователя' }, 500);
     }
