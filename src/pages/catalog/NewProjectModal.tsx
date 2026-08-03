@@ -1,29 +1,29 @@
 import { useRef, useState } from 'react';
 import { SysButton, SysLabeledField, SysModal } from '../../components/form';
-import { MonoLabel, Pill, RoleBadge } from '../../components/primitives';
+import { MonoLabel, RoleBadge } from '../../components/primitives';
 import { SYS, type Role } from '../../theme/tokens';
 import { supabase } from '../../lib/supabaseClient';
 import { uploadCover } from '../../lib/storage';
+import { inviteMember } from '../../lib/invite';
 import { useToasts } from '../../state/ToastContext';
 
 interface Person {
   email: string;
-  sent?: boolean;
 }
 
 const ROLE_GROUPS_INITIAL: { role: Role; hint: string; people: Person[] }[] = [
-  { role: 'project_manager', hint: 'управляет проектами и составом работ', people: [{ email: 'a.chernyshev@orlov.red', sent: true }] },
+  { role: 'project_manager', hint: 'управляет проектами и составом работ', people: [{ email: '' }] },
   { role: 'site_manager', hint: 'ведёт отчёты с площадки', people: [{ email: '' }] },
   { role: 'client', hint: 'только просмотр', people: [{ email: '' }] },
 ];
 
 const AssignRoleRow = ({
-  role, first, person, onChange, onSend, onRemove,
+  role, first, person, onChange, onRemove,
 }: {
   role: Role; first: boolean; person: Person;
-  onChange: (email: string) => void; onSend: () => void; onRemove: () => void;
+  onChange: (email: string) => void; onRemove: () => void;
 }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr auto 20px', gap: 12, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${SYS.line}` }}>
+  <div style={{ display: 'grid', gridTemplateColumns: '150px 1fr 20px', gap: 12, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${SYS.line}` }}>
     {first ? <RoleBadge role={role} size="sm" /> : <span />}
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${SYS.line}`, background: SYS.paper, padding: '11px 14px' }}>
       <span style={{ color: SYS.muted, fontSize: 14 }}>✉</span>
@@ -34,11 +34,6 @@ const AssignRoleRow = ({
         style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'inherit', fontSize: 14, color: SYS.ink, minWidth: 0 }}
       />
     </div>
-    {person.sent ? (
-      <Pill tone="soft" color={SYS.muted}>приглашение отправлено</Pill>
-    ) : (
-      <SysButton tone="ghost" full={false} small type="button" disabled={!person.email.trim()} onClick={onSend}>Отправить</SysButton>
-    )}
     <span title="удалить" onClick={onRemove} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer', textAlign: 'right' }}>✕</span>
   </div>
 );
@@ -72,9 +67,6 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
 
   const updatePerson = (gi: number, pi: number, email: string) => {
     setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: g.people.map((p, j) => (j === pi ? { ...p, email } : p)) } : g)));
-  };
-  const sendPerson = (gi: number, pi: number) => {
-    setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: g.people.map((p, j) => (j === pi ? { ...p, sent: true } : p)) } : g)));
   };
   const removePerson = (gi: number, pi: number) => {
     setGroups((prev) => prev.map((g, i) => (i === gi ? { ...g, people: g.people.filter((_, j) => j !== pi) } : g)));
@@ -110,13 +102,28 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
       start_date: startDate || null,
       cover_url: coverUrl,
     });
-    setSubmitting(false);
     if (error) {
+      setSubmitting(false);
       addToast('error', `Не удалось создать объект: ${error.message}`);
       return;
     }
+
+    const invites = groups.flatMap((g) => g.people.filter((p) => p.email.trim()).map((p) => ({ role: g.role, email: p.email.trim() })));
+    let failed = 0;
+    for (const inv of invites) {
+      const { error: inviteError } = await inviteMember(code, inv.role, inv.email);
+      if (inviteError) failed++;
+    }
+
+    setSubmitting(false);
     onCreate();
-    addToast('success', `Объект «${title.trim()}» создан.`);
+    if (invites.length === 0) {
+      addToast('success', `Объект «${title.trim()}» создан.`);
+    } else if (failed === 0) {
+      addToast('success', `Объект создан, приглашения отправлены (${invites.length}).`);
+    } else {
+      addToast('error', `Объект создан, но ${failed} из ${invites.length} приглашений не отправились — пригласите их позже в настройках объекта.`);
+    }
   };
 
   return (
@@ -183,7 +190,7 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
             <MonoLabel color={SYS.ink} style={{ fontSize: 10 }}>участники и роли</MonoLabel>
           </div>
           <div style={{ fontSize: 11.5, color: SYS.muted, lineHeight: 1.4, marginBottom: 4 }}>
-            Кому и с каким доступом открыть объект — укажите email, мы отправим приглашение. Можно назначить позже.
+            Кому и с каким доступом открыть объект — укажите email, приглашения отправятся при создании объекта. Можно назначить позже.
           </div>
           <div>
             {groups.map((g, gi) => (
@@ -195,7 +202,6 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
                     first={pi === 0}
                     person={p}
                     onChange={(email) => updatePerson(gi, pi, email)}
-                    onSend={() => sendPerson(gi, pi)}
                     onRemove={() => removePerson(gi, pi)}
                   />
                 ))}

@@ -8,10 +8,12 @@ import { SectionHead } from '../../components/SectionHead';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { SYS } from '../../theme/tokens';
 import { useObjectRole } from '../../state/ObjectRoleContext';
-import { seedMembers, type Member, type ProjectDetails } from '../../mocks/settings';
+import type { Member, ProjectDetails } from '../../mocks/settings';
 import { useProjectDetails } from '../../state/ProjectDetailsContext';
+import { useMembers } from '../../state/useMembers';
 import { useToasts } from '../../state/ToastContext';
 import { uploadCover } from '../../lib/storage';
+import { inviteMember } from '../../lib/invite';
 import { InviteMemberModal } from '../../components/settings/InviteMemberModal';
 
 const SettingsCard = ({ title, sub, children, action }: { title: string; sub?: string; children: React.ReactNode; action?: React.ReactNode }) => (
@@ -21,7 +23,7 @@ const SettingsCard = ({ title, sub, children, action }: { title: string; sub?: s
   </section>
 );
 
-const MemberRow = ({ m, canManage, resent, onResend, onRevoke }: { m: Member; canManage: boolean; resent: boolean; onResend: () => void; onRevoke: () => void }) => (
+const MemberRow = ({ m, canManage, resending, resent, onResend, onRevoke }: { m: Member; canManage: boolean; resending: boolean; resent: boolean; onResend: () => void; onRevoke: () => void }) => (
   <div style={{ display: 'grid', gridTemplateColumns: '170px 1fr 220px 150px 90px', gap: 18, alignItems: 'center', padding: '16px 24px', borderTop: `1px solid ${SYS.line}`, background: SYS.paper }}>
     <RoleBadge role={m.role} size="sm" />
     <div style={{ fontSize: 14.5 }}>{m.name}</div>
@@ -35,7 +37,9 @@ const MemberRow = ({ m, canManage, resent, onResend, onRevoke }: { m: Member; ca
     </div>
     <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center' }}>
       {m.status === 'pending' && canManage && (
-        <span onClick={onResend} style={{ fontSize: 11, color: SYS.ink, cursor: 'pointer', whiteSpace: 'nowrap' }}>{resent ? 'отправлено ✓' : 'повторить'}</span>
+        <span onClick={resending ? undefined : onResend} style={{ fontSize: 11, color: SYS.ink, cursor: resending ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>
+          {resending ? 'отправка…' : resent ? 'отправлено ✓' : 'повторить'}
+        </span>
       )}
       {canManage && <span title="отозвать доступ" onClick={onRevoke} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer' }}>✕</span>}
     </div>
@@ -50,15 +54,28 @@ export const SettingsPage = () => {
   const { addToast } = useToasts();
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const { members, revoke, refetch: refetchMembers } = useMembers(projectCode ?? '');
   const [details, setDetails] = useState<ProjectDetails>(savedDetails);
-  const [members, setMembers] = useState<Member[]>(() => seedMembers());
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [invitingOpen, setInvitingOpen] = useState(false);
   const [revoking, setRevoking] = useState<Member | null>(null);
   const [archiving, setArchiving] = useState(false);
+  const [resendingIds, setResendingIds] = useState<Set<string>>(new Set());
   const [resentIds, setResentIds] = useState<Set<string>>(new Set());
   const [uploadingCover, setUploadingCover] = useState(false);
+
+  const resend = async (m: Member) => {
+    setResendingIds((prev) => new Set(prev).add(m.id));
+    const { error } = await inviteMember(projectCode ?? '', m.role, m.email);
+    setResendingIds((prev) => { const next = new Set(prev); next.delete(m.id); return next; });
+    if (error) {
+      addToast('error', `Не удалось отправить: ${error}`);
+      return;
+    }
+    setResentIds((prev) => new Set(prev).add(m.id));
+    addToast('info', `Приглашение отправлено на ${m.email}.`);
+  };
 
   // savedDetails loads asynchronously from Supabase — the draft above only
   // captures it once via useState, so re-sync once the real data arrives.
@@ -159,13 +176,17 @@ export const SettingsPage = () => {
             <MonoLabel key={h} color={SYS.muted} style={{ fontSize: 9.5, textAlign: i === 4 ? 'right' : 'left' }}>{h}</MonoLabel>
           ))}
         </div>
+        {members.length === 0 && (
+          <div style={{ padding: '20px 24px', fontSize: 12.5, color: SYS.muted }}>Пока никого нет — пригласите первого участника.</div>
+        )}
         {members.map((m) => (
           <MemberRow
             key={m.id}
             m={m}
             canManage={canEdit}
+            resending={resendingIds.has(m.id)}
             resent={resentIds.has(m.id)}
-            onResend={() => setResentIds((prev) => new Set(prev).add(m.id))}
+            onResend={() => resend(m)}
             onRevoke={() => setRevoking(m)}
           />
         ))}
@@ -193,8 +214,13 @@ export const SettingsPage = () => {
 
       {invitingOpen && (
         <InviteMemberModal
+          objectCode={projectCode}
           onClose={() => setInvitingOpen(false)}
-          onInvite={(member) => setMembers((prev) => [...prev, member])}
+          onInvited={() => {
+            refetchMembers();
+            addToast('success', 'Приглашение отправлено.');
+            setInvitingOpen(false);
+          }}
         />
       )}
 
@@ -204,8 +230,9 @@ export const SettingsPage = () => {
           confirmLabel="Отозвать доступ"
           message={`${revoking.name !== '—' ? revoking.name : revoking.email} (${revoking.role === 'client' ? 'Client' : revoking.role === 'project_manager' ? 'Project Manager' : 'Object Manager'}) потеряет доступ к объекту ${projectCode} сразу же. Пригласить снова можно будет по email.`}
           onCancel={() => setRevoking(null)}
-          onConfirm={() => {
-            setMembers((prev) => prev.filter((m) => m.id !== revoking.id));
+          onConfirm={async () => {
+            const { error } = await revoke(revoking.id);
+            if (error) { addToast('error', `Не удалось отозвать доступ: ${error}`); return; }
             addToast('info', `Доступ для ${revoking.name !== '—' ? revoking.name : revoking.email} отозван.`);
             setRevoking(null);
           }}

@@ -2,20 +2,27 @@ import { useState } from 'react';
 import { SysButton, SysLabeledField, SysModal, SysSelectField } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS, type Role } from '../../theme/tokens';
-import type { Member } from '../../mocks/settings';
-import { useToasts } from '../../state/ToastContext';
+import { inviteMember } from '../../lib/invite';
 
-export const InviteMemberModal = ({ onClose, onInvite }: { onClose: () => void; onInvite: (member: Member) => void }) => {
-  const { addToast } = useToasts();
+export const InviteMemberModal = ({ objectCode, onClose, onInvited }: { objectCode: string; onClose: () => void; onInvited: () => void }) => {
   const [role, setRole] = useState<Role>('site_manager');
   const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  const send = () => {
-    if (!email.trim()) return;
-    onInvite({ id: `u${Date.now()}`, role, name: '—', email: email.trim(), status: 'pending' });
+  const send = async () => {
+    if (!email.trim() || sending) return;
+    setSending(true);
+    setError(null);
+    const { error: inviteError } = await inviteMember(objectCode, role, email.trim());
+    setSending(false);
+    if (inviteError) {
+      setError(inviteError);
+      return;
+    }
     setSent(true);
-    addToast('info', `Приглашение отправлено на ${email.trim()}.`);
+    onInvited();
   };
 
   return (
@@ -30,7 +37,7 @@ export const InviteMemberModal = ({ onClose, onInvite }: { onClose: () => void; 
 
       <div style={{ padding: '26px 32px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         <SysSelectField
-          label="Роль" value={role} onChange={(e: any) => setRole(e.target.value)}
+          label="Роль" value={role} onChange={(e: any) => { setRole(e.target.value); setSent(false); }}
           options={[
             { value: 'project_manager', label: 'Project Manager' },
             { value: 'site_manager', label: 'Object Manager' },
@@ -39,14 +46,19 @@ export const InviteMemberModal = ({ onClose, onInvite }: { onClose: () => void; 
         />
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>
-            <SysLabeledField label="Email" placeholder="name@example.com" value={email} onChange={(e: any) => { setEmail(e.target.value); setSent(false); }} />
+            <SysLabeledField label="Email" placeholder="name@example.com" value={email} error={!!error} onChange={(e: any) => { setEmail(e.target.value); setSent(false); setError(null); }} />
           </div>
-          <SysButton tone="fill" full={false} small type="button" disabled={!email.trim()} onClick={send}>
+          <SysButton tone="fill" full={false} small type="button" disabled={!email.trim()} loading={sending} onClick={send}>
             {sent ? 'Отправлено ✓' : 'Отправить'}
           </SysButton>
         </div>
+        {error && (
+          <div style={{ fontSize: 11.5, color: SYS.red, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>⚠</span> {error}
+          </div>
+        )}
         <p style={{ margin: 0, fontSize: 11.5, color: SYS.muted, lineHeight: 1.5 }}>
-          На указанный email придёт одноразовая ссылка-приглашение (действует 7 дней). Роль и объект заданы здесь — изменить их самостоятельно приглашённый не сможет.
+          На указанный email придёт письмо со ссылкой для входа. Роль и объект заданы здесь — изменить их самостоятельно приглашённый не сможет.
         </p>
       </div>
 
