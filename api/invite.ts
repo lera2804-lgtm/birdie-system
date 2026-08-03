@@ -1,41 +1,55 @@
-// Vercel Edge Function — the only place in this app allowed to use the
+// Vercel Node Function — the only place in this app allowed to use the
 // Supabase service_role key. Creates (or reuses) an account for the invited
 // email and grants it a role on the object. Never expose this key to the
 // client bundle; it must only ever live in Vercel's server-side env vars.
+//
+// Written against plain Node http types (no @vercel/node dependency, no
+// Edge runtime) and reads the request body manually rather than relying on
+// any framework's auto-parsing, to keep this as few moving parts as possible.
+import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient } from '@supabase/supabase-js';
-
-export const config = { runtime: 'edge' };
 
 const ALLOWED_ROLES = ['project_manager', 'site_manager', 'client'];
 
-const json = (body: unknown, status: number) =>
-  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+const send = (res: ServerResponse, status: number, body: unknown) => {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify(body));
+};
 
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+const readBody = (req: IncomingMessage): Promise<string> =>
+  new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', (chunk) => { data += chunk; });
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
+  });
+
+export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (req.method !== 'POST') return send(res, 405, { error: 'Method not allowed' });
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !anonKey || !serviceKey) {
-    return json({ error: 'Сервер не настроен: не хватает переменных окружения' }, 500);
+    return send(res, 500, { error: 'Сервер не настроен: не хватает переменных окружения' });
   }
 
-  const token = (req.headers.get('authorization') ?? '').replace('Bearer ', '');
-  if (!token) return json({ error: 'Не авторизовано' }, 401);
+  const token = (req.headers.authorization ?? '').replace('Bearer ', '');
+  if (!token) return send(res, 401, { error: 'Не авторизовано' });
 
   let body: { objectCode?: string; role?: string; email?: string; name?: string };
   try {
-    body = await req.json();
+    body = JSON.parse(await readBody(req));
   } catch {
-    return json({ error: 'Некорректный запрос' }, 400);
+    return send(res, 400, { error: 'Некорректный запрос' });
   }
   const objectCode = body.objectCode?.trim();
   const role = body.role;
   const email = body.email?.trim().toLowerCase();
   const name = body.name?.trim();
-  if (!objectCode || !role || !email) return json({ error: 'Не хватает данных' }, 400);
-  if (!ALLOWED_ROLES.includes(role)) return json({ error: 'Недопустимая роль' }, 400);
+  if (!objectCode || !role || !email) return send(res, 400, { error: 'Не хватает данных' });
+  if (!ALLOWED_ROLES.includes(role)) return send(res, 400, { error: 'Недопустимая роль' });
 
   // Caller's own session — used only to verify they're allowed to manage
   // this object, via the same RLS every other client call goes through.
@@ -43,7 +57,7 @@ export default async function handler(req: Request): Promise<Response> {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
   const { data: userData, error: userError } = await callerClient.auth.getUser();
-  if (userError || !userData.user) return json({ error: 'Не авторизовано' }, 401);
+  if (userError || !userData.user) return send(res, 401, { error: 'Не авторизовано' });
 
   const { data: profile } = await callerClient.from('profiles').select('is_admin').eq('id', userData.user.id).single();
   let allowed = profile?.is_admin === true;
@@ -57,7 +71,7 @@ export default async function handler(req: Request): Promise<Response> {
       .maybeSingle();
     allowed = membership?.role === 'project_manager';
   }
-  if (!allowed) return json({ error: 'Недостаточно прав' }, 403);
+  if (!allowed) return send(res, 403, { error: 'Недостаточно прав' });
 
   const admin = createClient(supabaseUrl, serviceKey);
 
@@ -69,7 +83,7 @@ export default async function handler(req: Request): Promise<Response> {
       data: name ? { name } : undefined,
     });
     if (inviteError || !invited.user) {
-      return json({ error: inviteError?.message ?? 'Не удалось пригласить пользователя' }, 500);
+      return send(res, 500, { error: inviteError?.message || 'Не удалось пригласить пользователя' });
     }
     userId = invited.user.id;
   }
@@ -77,7 +91,7 @@ export default async function handler(req: Request): Promise<Response> {
   const { error: membershipError } = await admin
     .from('memberships')
     .upsert({ object_code: objectCode, user_id: userId, role, status: 'active' }, { onConflict: 'object_code,user_id' });
-  if (membershipError) return json({ error: membershipError.message }, 500);
+  if (membershipError) return send(res, 500, { error: membershipError.message });
 
-  return json({ ok: true }, 200);
+  return send(res, 200, { ok: true });
 }
