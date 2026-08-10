@@ -141,8 +141,12 @@ export const SettingsPage = () => {
 
       <SettingsCard title="Фото-заставка" sub="показывается на карточке объекта в каталоге">
         <div style={{ padding: 24, display: 'grid', gridTemplateColumns: '260px 1fr', gap: 20, alignItems: 'center' }}>
-          <div style={{ height: 150, overflow: 'hidden', border: `1px solid ${SYS.line}` }}>
-            <img src={details.cover} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <div style={{ height: 150, overflow: 'hidden', border: `1px solid ${SYS.line}`, background: SYS.paper, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {details.cover ? (
+              <img src={details.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            ) : (
+              <span style={{ fontSize: 11, color: SYS.muted }}>нет фото</span>
+            )}
           </div>
           <div>
             {canEdit && <SysButton tone="ghost" full={false} small type="button" loading={uploadingCover} onClick={() => fileRef.current?.click()}>Заменить фото</SysButton>}
