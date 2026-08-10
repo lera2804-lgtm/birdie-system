@@ -12,7 +12,11 @@ const extOf = (filename: string) => {
 };
 
 const upload = async (bucket: string, path: string, file: File): Promise<{ url: string | null; path: string | null; error: string | null }> => {
-  const { error } = await supabase.storage.from(bucket).upload(path, file);
+  // Safari's fetch throws a bare "Load failed" for streamed request bodies
+  // in some versions — read the file into memory first so the upload goes
+  // out as a plain buffer instead of a stream.
+  const body = await file.arrayBuffer();
+  const { error } = await supabase.storage.from(bucket).upload(path, body, { contentType: file.type || undefined });
   if (error) return { url: null, path: null, error: error.message };
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return { url: data.publicUrl, path, error: null };
