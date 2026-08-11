@@ -20,6 +20,7 @@ interface StageRow {
   readiness: number | null;
   updated_on: string | null;
   active: boolean;
+  position: number;
   start_date: string | null;
   meeting_date: string | null;
   handover_date: string | null;
@@ -33,6 +34,7 @@ const fromRow = (row: StageRow): ContractStage => ({
   readiness: row.readiness,
   updatedOn: row.updated_on,
   active: row.active,
+  position: row.position,
   start: row.start_date,
   meeting: row.meeting_date,
   handover: row.handover_date,
@@ -71,7 +73,7 @@ export const StagesProvider = ({ projectCode, children }: { projectCode: string;
     setLoading(true);
     const { data } = await supabase
       .from('stages')
-      .select('code, title, readiness, updated_on, active, start_date, meeting_date, handover_date, work_items(title, qty, pct, position), stage_events(tone, event_date, title)')
+      .select('code, title, readiness, updated_on, active, position, start_date, meeting_date, handover_date, work_items(title, qty, pct, position), stage_events(tone, event_date, title)')
       .eq('object_code', projectCode)
       .order('position')
       .order('position', { foreignTable: 'work_items' });
