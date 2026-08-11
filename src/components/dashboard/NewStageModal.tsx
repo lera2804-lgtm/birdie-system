@@ -66,6 +66,7 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
       readiness: recomputeReadiness(workItems),
       updatedOn: null,
       active: false,
+      position: 0, // addStage assigns the real position server-side
       start: start || null,
       handover: handover || null,
       today: null,
