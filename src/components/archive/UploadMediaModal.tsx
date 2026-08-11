@@ -5,12 +5,13 @@ import { SYS } from '../../theme/tokens';
 import { toShortDate, type MediaItem, type MediaKind } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
 import { useToasts } from '../../state/ToastContext';
+import { uploadMediaFile } from '../../lib/storage';
 
-export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
+export const UploadMediaModal = ({ objectCode, onClose }: { objectCode: string; onClose: () => void }) => {
   const { addMedia } = useArchive();
   const { addToast } = useToasts();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [fileName, setFileName] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [kind, setKind] = useState<MediaKind>('Video');
   const [title, setTitle] = useState('');
   const [album, setAlbum] = useState('');
@@ -23,20 +24,33 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
     e.preventDefault();
     setDragOver(false);
     const f = e.dataTransfer.files?.[0];
-    if (f) setFileName(f.name);
+    if (f) setFile(f);
   };
 
   const [submitting, setSubmitting] = useState(false);
-  const canSubmit = title.trim() && createdDate.trim() && !submitting;
+  const [uploading, setUploading] = useState(false);
+  const canSubmit = title.trim() && createdDate.trim() && !submitting && !uploading;
 
   const submit = async () => {
     if (!canSubmit) return;
+    let storagePath: string | undefined;
+    if (file) {
+      setUploading(true);
+      const { path, error } = await uploadMediaFile(objectCode, file);
+      setUploading(false);
+      if (error || !path) {
+        addToast('error', `Не удалось загрузить файл: ${error}`);
+        return;
+      }
+      storagePath = path;
+    }
     const media: MediaItem = {
       id: `m${Date.now()}`,
       kind,
       name: `${title.trim()}${album ? ` ${album}` : ''}${variant ? ` / ${variant}` : ''}`,
       date: toShortDate(createdDate),
       driveUrl: driveUrl.trim() || undefined,
+      storagePath,
     };
     setSubmitting(true);
     const { error } = await addMedia(media);
@@ -72,8 +86,8 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
               height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer',
             }}
           >
-            {fileName ? (
-              <span style={{ fontSize: 13, color: SYS.ink }}>✓ {fileName}</span>
+            {file ? (
+              <span style={{ fontSize: 13, color: SYS.ink }}>✓ {file.name}</span>
             ) : (
               <>
                 <span style={{ fontSize: 20, color: SYS.muted }}>⤒</span>
@@ -82,7 +96,7 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
               </>
             )}
           </div>
-          <input ref={fileRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => setFileName(e.target.files?.[0]?.name ?? '')} />
+          <input ref={fileRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         </div>
         <SysSelectField
           label="Тип" value={kind} onChange={(e: any) => setKind(e.target.value)}
@@ -100,7 +114,7 @@ export const UploadMediaModal = ({ onClose }: { onClose: () => void }) => {
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" loading={submitting} disabled={!canSubmit} onClick={submit}>Добавить в мультимедиа</SysButton>
+          <SysButton type="button" loading={submitting || uploading} disabled={!canSubmit} onClick={submit}>Добавить в мультимедиа</SysButton>
         </div>
       </div>
     </SysModal>
