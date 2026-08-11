@@ -48,19 +48,4 @@ export interface ContractStage {
   code: string;
   title: string;
   readiness: number | null;
-  updatedOn: string | null;
-  active: boolean;
-  start: string | null;
-  meeting?: string | null;
-  handover: string | null;
-  today: string | null;
-  extraMarkers?: string[];
-  workItems: WorkItem[];
-  factEvents: StageEvent[];
-  planEvents: StageEvent[];
-}
-
-export const recomputeReadiness = (workItems: WorkItem[]): number | null => {
-  if (workItems.length === 0) return null;
-  return Math.round(workItems.reduce((acc, w) => acc + w.pct, 0) / workItems.length);
-};
+  updatedOn: str
