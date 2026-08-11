@@ -33,6 +33,9 @@ export const uploadReportPhoto = (objectCode: string, reportDate: string, file: 
 export const uploadCover = (objectCode: string, file: File) =>
   upload('covers', `${objectCode}/${randomId()}${extOf(file.name)}`, file);
 
+export const uploadMediaFile = (objectCode: string, file: File) =>
+  upload('media', `${objectCode}/${randomId()}${extOf(file.name)}`, file);
+
 // Extracts the storage path from a public URL previously returned by
 // getPublicUrl, so cleanup calls can pass it to storage.remove().
 export const pathFromPublicUrl = (bucket: string, url: string): string | null => {
