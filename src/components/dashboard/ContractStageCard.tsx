@@ -9,7 +9,14 @@ export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; ca
   <section style={{ background: SYS.paper, border: `1px solid ${SYS.line}`, padding: 32 }}>
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
       <div>
-        <MonoLabel color={SYS.red}>{s.code}</MonoLabel>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <MonoLabel color={SYS.red}>{s.code}</MonoLabel>
+          {s.readiness === 100 && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 8px', border: `1px solid ${SYS.ink}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 9.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: SYS.ink }}>
+              ✓ завершён
+            </span>
+          )}
+        </div>
         <h2 style={{ margin: '8px 0 0', fontSize: 26, fontWeight: 500, letterSpacing: '-0.008em' }}>{s.title}</h2>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
