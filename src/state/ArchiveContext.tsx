@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { publicUrl } from '../lib/storage';
 import { fromShortDate, toShortDate, type ArchiveData, type ArchiveFile, type KeyFile, type MediaItem } from '../mocks/archive';
 
 interface ArchiveState extends ArchiveData {
@@ -35,6 +36,7 @@ interface MediaRow {
   name: string;
   item_date: string;
   drive_url: string | null;
+  storage_path: string | null;
 }
 
 const fileFromRow = (r: FileRow): ArchiveFile => ({
@@ -57,6 +59,8 @@ const mediaFromRow = (r: MediaRow): MediaItem => ({
   name: r.name,
   date: toShortDate(r.item_date),
   driveUrl: r.drive_url ?? undefined,
+  storagePath: r.storage_path ?? undefined,
+  fileUrl: r.storage_path ? publicUrl('media', r.storage_path) : undefined,
 });
 
 const keyFilesFrom = (allFiles: ArchiveFile[]): KeyFile[] =>
@@ -73,7 +77,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
     setLoading(true);
     const [filesRes, mediaRes] = await Promise.all([
       supabase.from('archive_files').select('id, type, name, album, variant, created_date, uploaded_date, is_key, key_status, client_hidden, drive_url').eq('object_code', projectCode),
-      supabase.from('media_items').select('id, kind, name, item_date, drive_url').eq('object_code', projectCode),
+      supabase.from('media_items').select('id, kind, name, item_date, drive_url, storage_path').eq('object_code', projectCode),
     ]);
     setAllFiles((filesRes.data ?? []).map(fileFromRow));
     setMedia((mediaRes.data ?? []).map(mediaFromRow));
@@ -141,6 +145,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
       name: item.name,
       item_date: fromShortDate(item.date),
       drive_url: item.driveUrl ?? null,
+      storage_path: item.storagePath ?? null,
     });
     if (error) return { error: error.message };
     await load();
@@ -154,6 +159,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
     if (patch.name !== undefined) payload.name = patch.name;
     if (patch.date !== undefined) payload.item_date = fromShortDate(patch.date);
     if (patch.driveUrl !== undefined) payload.drive_url = patch.driveUrl;
+    if (patch.storagePath !== undefined) payload.storage_path = patch.storagePath;
     const { error } = await supabase.from('media_items').update(payload).eq('id', id);
     return { error: error?.message ?? null };
   };
