@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { MonoLabel, PhotoPlaceholder } from '../../components/primitives';
 import { SysButton } from '../../components/form';
 import { PageHeader } from '../../components/PageHeader';
@@ -6,7 +7,7 @@ import { SectionHead } from '../../components/SectionHead';
 import { SYS } from '../../theme/tokens';
 import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useArchive } from '../../state/ArchiveContext';
-import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type MediaKind } from '../../mocks/archive';
+import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type KeyFileStatus, type MediaKind } from '../../mocks/archive';
 import { UploadDocModal } from '../../components/archive/UploadDocModal';
 import { UploadMediaModal } from '../../components/archive/UploadMediaModal';
 import { ConfirmModal } from '../../components/ConfirmModal';
@@ -52,6 +53,7 @@ const EmptySection = ({ icon, title, hint, cta }: { icon: string; title: string;
 
 export const ArchivePage = () => {
   const role = useObjectRole();
+  const { projectCode } = useParams();
   const { keyFiles, allFiles, media, removeFile, updateFile, toggleHidden, updateMedia, removeMedia } = useArchive();
   const { addToast } = useToasts();
   const [search, setSearch] = useState('');
@@ -62,7 +64,7 @@ export const ArchivePage = () => {
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [deletingFile, setDeletingFile] = useState<ArchiveFile | null>(null);
 
-  if (!role) return null;
+  if (!role || !projectCode) return null;
   const canManage = role === 'admin' || role === 'project_manager';
 
   const scopedFiles = canManage ? allFiles : allFiles.filter((f) => !f.clientHidden);
@@ -125,7 +127,22 @@ export const ArchivePage = () => {
                 <div key={f.id} style={{ display: 'grid', gridTemplateColumns: '56px 1fr 150px 170px 120px 150px', gap: 20, alignItems: 'center', padding: '22px 28px', background: SYS.paper }}>
                   <MonoLabel color={SYS.red} style={{ fontSize: 12 }}>{String(i + 1).padStart(2, '0')}</MonoLabel>
                   <div style={{ fontSize: 16, fontWeight: 500 }}>{f.name}</div>
-                  <MonoLabel color={SYS.red} style={{ fontSize: 11 }}>{f.status}</MonoLabel>
+                  {canManage ? (
+                    <select
+                      value={f.status}
+                      onChange={(e) => updateFile(f.id, { keyStatus: e.target.value as KeyFileStatus })}
+                      style={{
+                        border: `1px solid ${SYS.line}`, background: SYS.paper, padding: '7px 10px', width: 'fit-content',
+                        fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, letterSpacing: '0.06em', color: SYS.red, cursor: 'pointer',
+                      }}
+                    >
+                      <option value="на согласовании">на согласовании</option>
+                      <option value="утверждено">утверждено</option>
+                      <option value="в работе">в работе</option>
+                    </select>
+                  ) : (
+                    <MonoLabel color={SYS.red} style={{ fontSize: 11 }}>{f.status}</MonoLabel>
+                  )}
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.ink2 }}>{f.album}</div>
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: SYS.muted, textAlign: 'right' }}>{f.date}</div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -251,7 +268,11 @@ export const ArchivePage = () => {
               <div style={{ padding: 28, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, background: SYS.paper }}>
                 {sortedMedia.map((m) => (
                   <div key={m.id}>
-                    <PhotoPlaceholder label={m.kind === 'AR tour' ? '⊹ 3D' : '▶'} height={220} />
+                    {m.kind === 'Video' && m.fileUrl ? (
+                      <video src={m.fileUrl} controls style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block', background: '#000' }} />
+                    ) : (
+                      <PhotoPlaceholder label={m.kind === 'AR tour' ? '⊹ 3D' : '▶'} height={220} />
+                    )}
                     <div style={{ marginTop: 14, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
                       {canManage ? (
                         <>
@@ -283,7 +304,7 @@ export const ArchivePage = () => {
                         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14 }}>{m.date}</div>
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <a href={m.driveUrl || undefined} target="_blank" rel="noreferrer" style={{ padding: '10px 18px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Посмотреть</a>
+                        <a href={m.driveUrl || m.fileUrl || undefined} target="_blank" rel="noreferrer" style={{ padding: '10px 18px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Посмотреть</a>
                         {canManage && <span title="удалить" onClick={() => removeMedia(m.id)} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer' }}>✕</span>}
                       </div>
                     </div>
@@ -296,7 +317,7 @@ export const ArchivePage = () => {
       )}
 
       {uploadingDoc && <UploadDocModal onClose={() => setUploadingDoc(false)} />}
-      {uploadingMedia && <UploadMediaModal onClose={() => setUploadingMedia(false)} />}
+      {uploadingMedia && <UploadMediaModal objectCode={projectCode} onClose={() => setUploadingMedia(false)} />}
       {deletingFile && (
         <ConfirmModal
           title="Удалить файл?"
