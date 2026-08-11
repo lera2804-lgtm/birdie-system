@@ -52,6 +52,10 @@ export interface MediaItem {
   name: string;
   date: string;
   driveUrl?: string;
+  // Set on write (the freshly uploaded object's storage path) so addMedia
+  // can persist it; fileUrl is derived from it on read via publicUrl().
+  storagePath?: string;
+  fileUrl?: string;
 }
 
 export interface ArchiveData {
