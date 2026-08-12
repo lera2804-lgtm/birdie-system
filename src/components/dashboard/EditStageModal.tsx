@@ -102,7 +102,7 @@ export const EditStageModal = ({ stage, onClose }: { stage: ContractStage; onClo
   };
 
   return (
-    <SysModal width={680} onClose={commitAndClose}>
+    <SysModal width={760} onClose={commitAndClose}>
       <div style={{ padding: '28px 32px 24px', borderBottom: `1px solid ${SYS.line}` }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>редактирование проекта</MonoLabel>

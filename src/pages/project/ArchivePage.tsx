@@ -23,11 +23,24 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: 'name-asc', label: 'По названию А-Я' },
   { value: 'name-desc', label: 'По названию Я-А' },
 ];
+// When two files share a date, break the tie by name, then album, then
+// variant — so date sorting never leaves same-day files in an arbitrary
+// (load-order) sequence.
+const compareByDateThenFields = (a: ArchiveFile, b: ArchiveFile, dir: 1 | -1): number => {
+  const byDate = (parseShortDate(a.created) - parseShortDate(b.created)) * dir;
+  if (byDate !== 0) return byDate;
+  const byName = a.name.localeCompare(b.name, 'ru');
+  if (byName !== 0) return byName;
+  const byAlbum = a.album.localeCompare(b.album, 'ru');
+  if (byAlbum !== 0) return byAlbum;
+  return a.variant.localeCompare(b.variant, 'ru');
+};
+
 const sortFiles = (files: ArchiveFile[], mode: SortMode): ArchiveFile[] =>
   [...files].sort((a, b) => {
     switch (mode) {
-      case 'date-desc': return parseShortDate(b.created) - parseShortDate(a.created);
-      case 'date-asc': return parseShortDate(a.created) - parseShortDate(b.created);
+      case 'date-desc': return compareByDateThenFields(a, b, -1);
+      case 'date-asc': return compareByDateThenFields(a, b, 1);
       case 'name-asc': return a.name.localeCompare(b.name, 'ru');
       case 'name-desc': return b.name.localeCompare(a.name, 'ru');
     }
@@ -70,6 +83,13 @@ export const ArchivePage = () => {
   const scopedFiles = canManage ? allFiles : allFiles.filter((f) => !f.clientHidden);
   const sortedMedia = [...media].sort((a, b) => parseShortDate(b.date) - parseShortDate(a.date));
   const types = useMemo(() => ['Все типы', ...Array.from(new Set(scopedFiles.map((f) => f.type)))], [scopedFiles]);
+
+  // Stable № — the file's rank by when it was actually added to the system
+  // (oldest = 1), independent of whatever sort/filter is currently shown.
+  const numberById = useMemo(() => {
+    const byInsertion = [...allFiles].sort((a, b) => (a.insertedAt ?? '').localeCompare(b.insertedAt ?? ''));
+    return new Map(byInsertion.map((f, i) => [f.id, i + 1]));
+  }, [allFiles]);
   const filtered = sortFiles(scopedFiles.filter((f) => {
     if (typeFilter !== 'Все типы' && f.type !== typeFilter) return false;
     if (!search.trim()) return true;
@@ -148,8 +168,10 @@ export const ArchivePage = () => {
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     {f.driveUrl ? (
                       <a href={f.driveUrl} target="_blank" rel="noreferrer" style={{ padding: '11px 22px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Посмотреть</a>
+                    ) : f.fileUrl ? (
+                      <a href={f.fileUrl} download target="_blank" rel="noreferrer" style={{ padding: '11px 22px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Скачать</a>
                     ) : (
-                      <span style={{ padding: '11px 22px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Скачать</span>
+                      <span style={{ padding: '11px 22px', background: 'transparent', color: SYS.muted, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Нет файла</span>
                     )}
                   </div>
                 </div>
@@ -200,7 +222,7 @@ export const ArchivePage = () => {
             )}
             {shown.map((f, i) => (
               <div key={f.id} style={{ display: 'grid', gridTemplateColumns: ARCH_COLS, gap: 18, alignItems: 'center', padding: '16px 28px', borderTop: `1px solid ${SYS.line}`, background: SYS.paper, opacity: f.clientHidden && canManage ? 0.72 : 1 }}>
-                <MonoLabel color={SYS.muted} style={{ fontSize: 11 }}>{String(i + 1).padStart(2, '0')}</MonoLabel>
+                <MonoLabel color={SYS.muted} style={{ fontSize: 11 }}>{String(numberById.get(f.id) ?? i + 1).padStart(2, '0')}</MonoLabel>
                 <div style={{ width: 46, height: 46, background: SYS.bg, border: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: SYS.ink2 }}>{f.type}</div>
                 <div style={{ fontSize: 14.5, display: 'flex', alignItems: 'center', gap: 8 }}>
                   {f.key && <span title="ключевой файл" style={{ color: SYS.red, fontSize: 14 }}>★</span>}
@@ -240,8 +262,10 @@ export const ArchivePage = () => {
                   )}
                   {f.driveUrl ? (
                     <a href={f.driveUrl} target="_blank" rel="noreferrer" style={{ padding: '10px 18px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Посмотреть</a>
+                  ) : f.fileUrl ? (
+                    <a href={f.fileUrl} download target="_blank" rel="noreferrer" style={{ padding: '10px 18px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Скачать</a>
                   ) : (
-                    <span style={{ padding: '10px 18px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Скачать</span>
+                    <span style={{ padding: '10px 18px', background: 'transparent', color: SYS.muted, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Нет файла</span>
                   )}
                   {canManage && <span title="удалить" onClick={() => setDeletingFile(f)} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer' }}>✕</span>}
                 </div>
@@ -316,7 +340,7 @@ export const ArchivePage = () => {
         </div>
       )}
 
-      {uploadingDoc && <UploadDocModal onClose={() => setUploadingDoc(false)} />}
+      {uploadingDoc && <UploadDocModal objectCode={projectCode} onClose={() => setUploadingDoc(false)} />}
       {uploadingMedia && <UploadMediaModal objectCode={projectCode} onClose={() => setUploadingMedia(false)} />}
       {deletingFile && (
         <ConfirmModal

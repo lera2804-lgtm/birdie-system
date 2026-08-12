@@ -46,7 +46,7 @@ export const NewReportModal = ({ date, onClose }: { date: string; onClose: () =>
 
   return (
     <>
-      <SysModal width={640} onClose={onClose}>
+      <SysModal width={720} onClose={onClose}>
         <div style={{ padding: '28px 32px 24px', borderBottom: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <div>
             <MonoLabel color={SYS.red}>новый отчёт · {formatLong(date)}</MonoLabel>

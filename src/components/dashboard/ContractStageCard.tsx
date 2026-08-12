@@ -6,7 +6,7 @@ import { StageTimeline } from './StageTimeline';
 import { EventColumn } from './EventColumn';
 
 export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; canEdit: boolean; onEdit: () => void }) => (
-  <section style={{ background: SYS.paper, border: `1px solid ${SYS.line}`, padding: 32 }}>
+  <section style={{ background: SYS.paper, border: `1px solid ${SYS.line}`, padding: 32, opacity: s.readiness === 100 ? 0.55 : 1 }}>
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -40,7 +40,6 @@ export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; ca
           <StageTimeline s={s} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginTop: 12, fontSize: 11, color: SYS.muted }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 16, height: 6, background: '#ecab99' }} /> выполнено</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 12, height: 12, borderRadius: '50%', background: SYS.paper, border: `2px solid ${SYS.red}` }} /> очная встреча</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 0, height: 12, borderLeft: `2px dashed ${SYS.red}` }} /> сегодня</span>
           </div>
         </>

@@ -204,7 +204,7 @@ export const SysSelectField = ({
   </div>
 );
 
-export const SysModal = ({ children, width = 560, onClose }: { children: ReactNode; width?: number; onClose?: () => void }) => (
+export const SysModal = ({ children, width = 640, onClose }: { children: ReactNode; width?: number; onClose?: () => void }) => (
   <div
     style={{
       position: 'fixed',

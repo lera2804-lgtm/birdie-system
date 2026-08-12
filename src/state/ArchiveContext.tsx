@@ -28,6 +28,8 @@ interface FileRow {
   key_status: string | null;
   client_hidden: boolean;
   drive_url: string | null;
+  storage_path: string | null;
+  created_at: string;
 }
 
 interface MediaRow {
@@ -51,6 +53,9 @@ const fileFromRow = (r: FileRow): ArchiveFile => ({
   keyStatus: (r.key_status as ArchiveFile['keyStatus']) ?? undefined,
   clientHidden: r.client_hidden,
   driveUrl: r.drive_url ?? undefined,
+  storagePath: r.storage_path ?? undefined,
+  fileUrl: r.storage_path ? publicUrl('documents', r.storage_path) : undefined,
+  insertedAt: r.created_at,
 });
 
 const mediaFromRow = (r: MediaRow): MediaItem => ({
@@ -66,7 +71,7 @@ const mediaFromRow = (r: MediaRow): MediaItem => ({
 const keyFilesFrom = (allFiles: ArchiveFile[]): KeyFile[] =>
   allFiles
     .filter((f) => f.key)
-    .map((f) => ({ id: f.id, name: f.name, status: f.keyStatus ?? 'на согласовании', album: `альбом ${f.album} / ${f.variant}`, date: f.created, driveUrl: f.driveUrl }));
+    .map((f) => ({ id: f.id, name: f.name, status: f.keyStatus ?? 'на согласовании', album: `альбом ${f.album} / ${f.variant}`, date: f.created, driveUrl: f.driveUrl, fileUrl: f.fileUrl }));
 
 export const ArchiveProvider = ({ projectCode, children }: { projectCode: string; children: ReactNode }) => {
   const [allFiles, setAllFiles] = useState<ArchiveFile[]>([]);
@@ -76,7 +81,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
   const load = async () => {
     setLoading(true);
     const [filesRes, mediaRes] = await Promise.all([
-      supabase.from('archive_files').select('id, type, name, album, variant, created_date, uploaded_date, is_key, key_status, client_hidden, drive_url').eq('object_code', projectCode),
+      supabase.from('archive_files').select('id, type, name, album, variant, created_date, uploaded_date, is_key, key_status, client_hidden, drive_url, storage_path, created_at').eq('object_code', projectCode),
       supabase.from('media_items').select('id, kind, name, item_date, drive_url, storage_path').eq('object_code', projectCode),
     ]);
     setAllFiles((filesRes.data ?? []).map(fileFromRow));
@@ -101,6 +106,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
       key_status: file.keyStatus ?? null,
       client_hidden: !!file.clientHidden,
       drive_url: file.driveUrl ?? null,
+      storage_path: file.storagePath ?? null,
     });
     if (error) return { error: error.message };
     await load();

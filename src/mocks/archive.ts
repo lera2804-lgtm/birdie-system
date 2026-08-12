@@ -7,6 +7,7 @@ export interface KeyFile {
   album: string;
   date: string;
   driveUrl?: string;
+  fileUrl?: string;
 }
 
 export interface ArchiveFile {
@@ -21,6 +22,11 @@ export interface ArchiveFile {
   keyStatus?: KeyFileStatus;
   clientHidden?: boolean;
   driveUrl?: string;
+  storagePath?: string;
+  fileUrl?: string;
+  // DB insertion timestamp — the stable basis for the archive's № column,
+  // independent of whatever display sort/filter is currently active.
+  insertedAt?: string;
 }
 
 // Sort key from a "DD.MM.YY" date string — monotonic integer, not a real

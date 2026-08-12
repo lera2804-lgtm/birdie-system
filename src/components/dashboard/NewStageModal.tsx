@@ -85,7 +85,7 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
   };
 
   return (
-    <SysModal width={680} onClose={onClose}>
+    <SysModal width={760} onClose={onClose}>
       <div style={{ padding: '28px 32px 24px', borderBottom: `1px solid ${SYS.line}` }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <MonoLabel color={SYS.red}>{projectCode} · новый проект</MonoLabel>

@@ -27,7 +27,12 @@ export const ReportsMobilePage = () => {
   const today = todayISO();
   const yesterday = addDays(today, -1);
 
-  const days = monthGrid(month).filter((c) => c.inMonth).reverse();
+  // This page is Object Manager only (see ReportsSection) — they only need
+  // to reach today or a recent day quickly, so future days of the month
+  // just add scrolling with nothing to show.
+  const days = monthGrid(month)
+    .filter((c) => c.inMonth && c.date <= today)
+    .reverse();
   const todayReport = month === currentMonth() ? reports[today] : undefined;
   const noToday = month === currentMonth() && !todayReport;
   const label = monthLabel(month);

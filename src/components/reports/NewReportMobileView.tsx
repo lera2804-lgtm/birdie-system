@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { SysButton } from '../form';
 import { MonoLabel } from '../primitives';
@@ -18,10 +18,30 @@ export const NewReportMobileView = ({ date, existing, onClose }: { date: string;
   const { stages } = useStages();
   const { addToast } = useToasts();
   const online = useOnlineStatus();
-  const [draft, setDraft] = useState<DayReport>(() => existing ?? { date, tasks: [], frontOffice: [{ id: 'o1', qty: '', role: '' }], backOffice: [], milestone: '' });
+  // Phones lock the screen mid-edit — a page reload from that (or the app
+  // just losing focus) would otherwise wipe unsaved input, so every change
+  // is mirrored to localStorage and restored on mount.
+  const draftKey = `report-draft:${projectCode}:${date}`;
+  const [draft, setDraft] = useState<DayReport>(() => {
+    try {
+      const saved = localStorage.getItem(draftKey);
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // corrupt or unavailable storage — fall through to a fresh draft
+    }
+    return existing ?? { date, tasks: [], frontOffice: [{ id: 'o1', qty: '', role: '' }], backOffice: [], milestone: '' };
+  });
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const deletingTask = draft.tasks.find((t) => t.id === deletingId);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(draftKey, JSON.stringify(draft));
+    } catch {
+      // storage full/unavailable — nothing more we can do locally
+    }
+  }, [draft, draftKey]);
 
   const submit = async (isDraft: boolean) => {
     setSubmitting(true);
@@ -31,6 +51,7 @@ export const NewReportMobileView = ({ date, existing, onClose }: { date: string;
       addToast('error', `Не удалось сохранить: ${error}`);
       return;
     }
+    try { localStorage.removeItem(draftKey); } catch { /* best effort */ }
     if (!isDraft) addToast('success', `Отчёт за ${formatShort(date)} опубликован — клиент уже видит его.`);
     onClose();
   };

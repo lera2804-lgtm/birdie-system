@@ -5,18 +5,18 @@ import { SYS } from '../../theme/tokens';
 import { ALLOWED_DOC_EXTENSIONS, MAX_UPLOAD_MB, toShortDate, type ArchiveFile, type KeyFileStatus } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
 import { useToasts } from '../../state/ToastContext';
+import { uploadDocFile } from '../../lib/storage';
 
-type UploadState = 'idle' | 'progress' | 'done' | 'error';
+type PickState = 'idle' | 'picked' | 'error';
 
-export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
+export const UploadDocModal = ({ objectCode, onClose }: { objectCode: string; onClose: () => void }) => {
   const { addFile } = useArchive();
   const { addToast } = useToasts();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [uploadState, setUploadState] = useState<UploadState>('idle');
-  const [fileName, setFileName] = useState('');
+  const [pickState, setPickState] = useState<PickState>('idle');
+  const [file, setFile] = useState<File | null>(null);
   const [fileExt, setFileExt] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [progress, setProgress] = useState(0);
 
   const [title, setTitle] = useState('');
   const [album, setAlbum] = useState('');
@@ -32,21 +32,14 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
     const ext = f.name.split('.').pop()?.toLowerCase() ?? '';
     const tooBig = f.size > MAX_UPLOAD_MB * 1024 * 1024;
     if (!ALLOWED_DOC_EXTENSIONS.includes(ext) || tooBig) {
-      setFileName(f.name);
-      setUploadState('error');
+      setFile(null);
+      setPickState('error');
       setErrorMsg(`${f.name} — ${tooBig ? `размер больше ${MAX_UPLOAD_MB} МБ` : 'неподдерживаемый формат'}. Разрешены PDF, DWG, XLSX, MP4.`);
       return;
     }
-    setFileName(f.name);
+    setFile(f);
     setFileExt(ext.toUpperCase());
-    setUploadState('progress');
-    setProgress(0);
-    const timer = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) { clearInterval(timer); setUploadState('done'); return 100; }
-        return p + 20;
-      });
-    }, 150);
+    setPickState('picked');
   };
 
   const [dragOver, setDragOver] = useState(false);
@@ -56,14 +49,26 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
     pickFile(e.dataTransfer.files?.[0]);
   };
 
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const canSubmit = title.trim() && createdDate.trim() && (uploadState === 'done' || driveUrl.trim()) && !submitting;
+  const canSubmit = title.trim() && createdDate.trim() && (pickState === 'picked' || driveUrl.trim()) && !submitting && !uploading;
 
   const submit = async () => {
     if (!canSubmit) return;
-    const file: ArchiveFile = {
+    let storagePath: string | undefined;
+    if (file) {
+      setUploading(true);
+      const { path, error } = await uploadDocFile(objectCode, file);
+      setUploading(false);
+      if (error || !path) {
+        addToast('error', `Не удалось загрузить файл: ${error}`);
+        return;
+      }
+      storagePath = path;
+    }
+    const archiveFile: ArchiveFile = {
       id: `f${Date.now()}`,
-      type: uploadState === 'done' ? fileExt : 'ССЫЛКА',
+      type: file ? fileExt : 'ССЫЛКА',
       name: title.trim(),
       album: album.trim() || '—',
       variant: variant.trim() || '—',
@@ -73,20 +78,21 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
       keyStatus: isKey ? status : undefined,
       clientHidden: !visible,
       driveUrl: driveUrl.trim() || undefined,
+      storagePath,
     };
     setSubmitting(true);
-    const { error } = await addFile(file);
+    const { error } = await addFile(archiveFile);
     setSubmitting(false);
     if (error) {
       addToast('error', `Не удалось добавить файл: ${error}`);
       return;
     }
-    addToast('success', `«${file.name}» добавлен в архив.`);
+    addToast('success', `«${archiveFile.name}» добавлен в архив.`);
     onClose();
   };
 
   return (
-    <SysModal width={560} onClose={onClose}>
+    <SysModal width={640} onClose={onClose}>
       <div style={{ padding: '28px 32px 24px', borderBottom: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <div>
           <MonoLabel color={SYS.red}>архив · загрузка</MonoLabel>
@@ -98,20 +104,9 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
       <div style={{ padding: '26px 32px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
           <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>Файл</MonoLabel>
-          {uploadState === 'progress' ? (
-            <div style={{ marginTop: 8, border: `1px solid ${SYS.line}`, background: SYS.paper, padding: '16px 18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ fontSize: 13 }}>{fileName}</div>
-                <MonoLabel color={SYS.muted} style={{ fontSize: 10 }}>{progress}%</MonoLabel>
-              </div>
-              <div style={{ height: 5, background: '#eae7dc', position: 'relative' }}>
-                <div style={{ position: 'absolute', inset: 0, width: `${progress}%`, background: SYS.red }} />
-              </div>
-              <div style={{ marginTop: 8, fontSize: 11, color: SYS.muted }}>Загрузка на Яндекс.Диск… <span onClick={() => setUploadState('idle')} style={{ color: SYS.ink, textDecoration: 'underline', cursor: 'pointer' }}>отмена</span></div>
-            </div>
-          ) : uploadState === 'error' ? (
+          {pickState === 'error' ? (
             <div style={{ marginTop: 8, border: `1px solid ${SYS.red}`, background: '#fbeae6', padding: '16px 18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: SYS.red, fontSize: 13, marginBottom: 6 }}><span>⚠</span> Файл не загружен</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: SYS.red, fontSize: 13, marginBottom: 6 }}><span>⚠</span> Файл не выбран</div>
               <div style={{ fontSize: 12, color: SYS.ink2, lineHeight: 1.45 }}>{errorMsg}</div>
               <div onClick={() => fileRef.current?.click()} style={{ marginTop: 10, fontSize: 12, color: SYS.ink, textDecoration: 'underline', cursor: 'pointer' }}>Выбрать другой файл</div>
             </div>
@@ -126,8 +121,8 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
                 height: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer',
               }}
             >
-              {uploadState === 'done' ? (
-                <span style={{ fontSize: 13, color: SYS.ink }}>✓ {fileName}</span>
+              {pickState === 'picked' && file ? (
+                <span style={{ fontSize: 13, color: SYS.ink }}>✓ {file.name}</span>
               ) : (
                 <>
                   <span style={{ fontSize: 20, color: SYS.muted }}>⤒</span>
@@ -191,8 +186,8 @@ export const UploadDocModal = ({ onClose }: { onClose: () => void }) => {
       <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
         <SysButton tone="ghost" full={false} small type="button" onClick={onClose}>Отмена</SysButton>
         <div style={{ flex: 1 }}>
-          <SysButton type="button" loading={uploadState === 'progress' || submitting} disabled={!canSubmit} onClick={submit}>
-            {uploadState === 'progress' ? 'Загрузка…' : 'Загрузить в архив'}
+          <SysButton type="button" loading={uploading || submitting} disabled={!canSubmit} onClick={submit}>
+            {uploading ? 'Загрузка…' : 'Загрузить в архив'}
           </SysButton>
         </div>
       </div>

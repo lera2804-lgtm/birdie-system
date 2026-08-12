@@ -27,7 +27,7 @@ export const InviteMemberModal = ({ objectCode, onClose, onInvited }: { objectCo
   };
 
   return (
-    <SysModal width={520} onClose={onClose}>
+    <SysModal width={600} onClose={onClose}>
       <div style={{ padding: '28px 32px 24px', borderBottom: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <div>
           <MonoLabel color={SYS.red}>настройки · доступ</MonoLabel>

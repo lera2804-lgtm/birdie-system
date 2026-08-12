@@ -137,7 +137,7 @@ export const NewProjectModal = ({ onClose, onCreate }: { onClose: () => void; on
   };
 
   return (
-    <SysModal width={640} onClose={onClose}>
+    <SysModal width={720} onClose={onClose}>
       <div style={{ padding: '28px 32px 24px', borderBottom: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <div>
           <MonoLabel color={SYS.red}>admin · новый объект</MonoLabel>
