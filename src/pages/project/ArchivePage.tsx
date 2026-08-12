@@ -292,7 +292,9 @@ export const ArchivePage = () => {
               <div style={{ padding: 28, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, background: SYS.paper }}>
                 {sortedMedia.map((m) => (
                   <div key={m.id}>
-                    {m.kind === 'Video' && m.fileUrl ? (
+                                        {m.fileUrl && m.driveUrl ? (
+                      <img src={m.fileUrl} alt="" style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }} />
+                    ) : m.kind === 'Video' && m.fileUrl ? (
                       <video src={m.fileUrl} controls style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block', background: '#000' }} />
                     ) : (
                       <PhotoPlaceholder label={m.kind === 'AR tour' ? '⊹ 3D' : '▶'} height={220} />
