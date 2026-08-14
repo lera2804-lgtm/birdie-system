@@ -15,6 +15,7 @@ import { useToasts } from '../../state/ToastContext';
 
 const ARCH_COLS = '48px 64px 1fr 130px 110px 110px 110px 150px';
 const PAGE_SIZE = 15;
+const MEDIA_PAGE_SIZE = 6;
 
 type SortMode = 'date-desc' | 'date-asc' | 'name-asc' | 'name-desc';
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
@@ -73,6 +74,7 @@ export const ArchivePage = () => {
   const [typeFilter, setTypeFilter] = useState('Все типы');
   const [sortMode, setSortMode] = useState<SortMode>('date-desc');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [visibleMediaCount, setVisibleMediaCount] = useState(MEDIA_PAGE_SIZE);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [deletingFile, setDeletingFile] = useState<ArchiveFile | null>(null);
@@ -82,6 +84,8 @@ export const ArchivePage = () => {
 
   const scopedFiles = canManage ? allFiles : allFiles.filter((f) => !f.clientHidden);
   const sortedMedia = [...media].sort((a, b) => parseShortDate(b.date) - parseShortDate(a.date));
+  const shownMedia = sortedMedia.slice(0, visibleMediaCount);
+  const hasMoreMedia = sortedMedia.length > shownMedia.length;
   const types = useMemo(() => ['Все типы', ...Array.from(new Set(scopedFiles.map((f) => f.type)))], [scopedFiles]);
 
   // Stable № — the file's rank by when it was actually added to the system
@@ -289,10 +293,11 @@ export const ArchivePage = () => {
             {media.length === 0 ? (
               <div style={{ padding: '32px 28px', textAlign: 'center', fontSize: 13, color: SYS.muted, background: SYS.paper }}>Пока нет медиафайлов</div>
             ) : (
+              <>
               <div style={{ padding: 28, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, background: SYS.paper }}>
-                {sortedMedia.map((m) => (
+                {shownMedia.map((m) => (
                   <div key={m.id}>
-                                        {m.fileUrl && m.driveUrl ? (
+                    {m.fileUrl && m.driveUrl ? (
                       <img src={m.fileUrl} alt="" style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }} />
                     ) : m.kind === 'Video' && m.fileUrl ? (
                       <video src={m.fileUrl} controls style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block', background: '#000' }} />
@@ -337,6 +342,14 @@ export const ArchivePage = () => {
                   </div>
                 ))}
               </div>
+              <div style={{ padding: '18px 28px', borderTop: `1px solid ${SYS.line}`, display: 'flex', justifyContent: 'center', background: SYS.bg }}>
+                {hasMoreMedia ? (
+                  <button type="button" onClick={() => setVisibleMediaCount((c) => c + MEDIA_PAGE_SIZE)} style={{ padding: '13px 40px', background: 'transparent', border: `1px solid ${SYS.ink}`, color: SYS.ink, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', cursor: 'pointer' }}>Показать ещё</button>
+                ) : (
+                  <MonoLabel color={SYS.muted}>показаны все {sortedMedia.length} файлов</MonoLabel>
+                )}
+              </div>
+              </>
             )}
           </section>
         </div>
