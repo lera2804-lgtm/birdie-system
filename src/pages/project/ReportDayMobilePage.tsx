@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MonoLabel, Pill } from '../../components/primitives';
 import { SYS } from '../../theme/tokens';
 import { useAuth } from '../../auth/AuthContext';
 import { useReports } from '../../state/ReportsContext';
 import { useStages } from '../../state/StagesContext';
-import { formatShort } from '../../mocks/reports';
+import { formatShort, type ReportTask } from '../../mocks/reports';
 import { daysSinceStart } from '../../mocks/dashboard';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { OfflineBanner } from '../../components/OfflineBanner';
+import { PhotoLightbox } from '../../components/reports/PhotoLightbox';
 
 export const ReportDayMobilePage = () => {
   const { user } = useAuth();
@@ -16,6 +18,7 @@ export const ReportDayMobilePage = () => {
   const { reports } = useReports();
   const { stages } = useStages();
   const online = useOnlineStatus();
+  const [lightbox, setLightbox] = useState<{ task: ReportTask; index: number } | null>(null);
 
   if (!user || !projectCode || !day) return null;
   const report = reports[day];
@@ -63,16 +66,19 @@ export const ReportDayMobilePage = () => {
                   </div>
                   {dayNum !== null && dayNum > 0 && <MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>{dayNum}-й день</MonoLabel>}
                 </div>
-                {tasks.map((t) => (
+                {tasks.map((t, i) => (
                   <div key={t.id} style={{ border: `1px solid ${SYS.line}`, padding: 14, marginBottom: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: t.photos.length ? 12 : 0 }}>
-                      <span style={{ fontSize: 14, lineHeight: 1.4 }}>{t.title}</span>
+                      <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                        <MonoLabel color={SYS.muted} style={{ fontSize: 11 }}>{String(i + 1).padStart(2, '0')}</MonoLabel>
+                        <span style={{ fontSize: 14, lineHeight: 1.4 }}>{t.title}</span>
+                      </span>
                       <Pill tone="ghost" color={t.kind === 'field' ? SYS.muted : SYS.ink}>{t.kind === 'field' ? 'полевая' : 'кабинетная'}</Pill>
                     </div>
                     {t.photos.length > 0 && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-                        {t.photos.map((p) => (
-                          <div key={p.id} style={{ aspectRatio: '1', background: '#eae7dc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: SYS.muted, overflow: 'hidden' }}>
+                        {t.photos.map((p, pi) => (
+                          <div key={p.id} onClick={() => setLightbox({ task: t, index: pi })} style={{ aspectRatio: '1', background: '#eae7dc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: SYS.muted, overflow: 'hidden', cursor: 'pointer' }}>
                             {p.url ? <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '▤'}
                           </div>
                         ))}
@@ -97,6 +103,15 @@ export const ReportDayMobilePage = () => {
             <MonoLabel color={SYS.muted} style={{ fontSize: 9 }}>только просмотр · правка недоступна</MonoLabel>
           </div>
         </>
+      )}
+
+      {lightbox && (
+        <PhotoLightbox
+          photos={lightbox.task.photos}
+          startIndex={lightbox.index}
+          subtitle={`${lightbox.task.subproject} · ${lightbox.task.title}`}
+          onClose={() => setLightbox(null)}
+        />
       )}
     </div>
   );
