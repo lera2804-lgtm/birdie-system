@@ -1,7 +1,11 @@
 export interface WorkItem {
+  id?: string;
   title: string;
   qty?: string;
   pct: number;
+  // Short label shown wherever the full title would be too long to fit
+  // (e.g. the task-editor picker that links a report task to this work item).
+  tag?: string;
 }
 
 // event.date is a full ISO date (YYYY-MM-DD) — carries its own year, so

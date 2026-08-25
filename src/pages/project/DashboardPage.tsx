@@ -141,7 +141,7 @@ export const DashboardPage = () => {
       ) : sortKey === 'default' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {defaultGroups.active.map((s) => (
-            <ContractStageCard key={s.code} s={s} canEdit={canEdit} onEdit={() => setEditingCode(s.code)} />
+            <ContractStageCard key={s.code} s={s} canEdit={canEdit} onEdit={() => setEditingCode(s.code)} projectCode={projectCode} />
           ))}
           {defaultGroups.active.length > 0 && defaultGroups.done.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '4px 0' }}>
@@ -151,13 +151,13 @@ export const DashboardPage = () => {
             </div>
           )}
           {defaultGroups.done.map((s) => (
-            <ContractStageCard key={s.code} s={s} canEdit={canEdit} onEdit={() => setEditingCode(s.code)} />
+            <ContractStageCard key={s.code} s={s} canEdit={canEdit} onEdit={() => setEditingCode(s.code)} projectCode={projectCode} />
           ))}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {visibleStages.map((s) => (
-            <ContractStageCard key={s.code} s={s} canEdit={canEdit} onEdit={() => setEditingCode(s.code)} />
+            <ContractStageCard key={s.code} s={s} canEdit={canEdit} onEdit={() => setEditingCode(s.code)} projectCode={projectCode} />
           ))}
         </div>
       )}

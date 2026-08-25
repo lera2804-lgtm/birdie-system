@@ -2,6 +2,7 @@ import { MonoLabel } from '../primitives';
 import { SysButton, SysLabeledField } from '../form';
 import { SYS } from '../../theme/tokens';
 import { type DayReport, type ReportTask } from '../../mocks/reports';
+import type { WorkItem } from '../../mocks/dashboard';
 import { TaskEditorRow } from './TaskEditorRow';
 import { OfficeRows } from './OfficeRows';
 
@@ -15,7 +16,7 @@ export const ReportEditorBody = ({
   setDraft: (updater: (d: DayReport) => DayReport) => void;
   allowDeskType: boolean;
   allowBackOffice: boolean;
-  stages: { code: string; title: string }[];
+  stages: { code: string; title: string; workItems: WorkItem[] }[];
   objectCode: string;
   invalidTaskIds?: Set<string>;
   onRequestDeleteTask: (taskId: string) => void;

@@ -8,6 +8,7 @@ import { ResetSentPage } from './pages/auth/ResetSentPage';
 import { CatalogPage } from './pages/catalog/CatalogPage';
 import { ProjectShell, ProjectIndexRedirect } from './pages/project/ProjectShell';
 import { DashboardPage } from './pages/project/DashboardPage';
+import { WorkItemDaysPage } from './pages/project/WorkItemDaysPage';
 import { ReportsSection } from './pages/project/ReportsSection';
 import { ReportDaySection } from './pages/project/ReportDaySection';
 import { ArchivePage } from './pages/project/ArchivePage';
@@ -37,6 +38,7 @@ function App() {
           <Route path="/:projectCode" element={<RequireAuth><ProjectShell /></RequireAuth>}>
             <Route index element={<ProjectIndexRedirect />} />
             <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="work/:workItemId" element={<WorkItemDaysPage />} />
             <Route path="reports" element={<ReportsIndexRedirect />} />
             <Route path="reports/:month" element={<ReportsSection />} />
             <Route path="reports/:month/:day" element={<ReportDaySection />} />

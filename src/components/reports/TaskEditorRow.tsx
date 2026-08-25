@@ -3,8 +3,13 @@ import { MonoLabel } from '../primitives';
 import { SysLabeledField, SysSelectField } from '../form';
 import { SYS } from '../../theme/tokens';
 import type { ReportTask } from '../../mocks/reports';
+import type { WorkItem } from '../../mocks/dashboard';
 import { uploadReportPhoto } from '../../lib/storage';
 import { useToasts } from '../../state/ToastContext';
+
+// Short label for the work-item picker: a manually set tag if there is one,
+// otherwise the title clipped so a long work item doesn't blow out the row.
+const workItemLabel = (w: WorkItem): string => w.tag || (w.title.length > 28 ? `${w.title.slice(0, 28)}…` : w.title);
 
 const MAX_PHOTOS = 4;
 
@@ -14,7 +19,7 @@ export const TaskEditorRow = ({
   task: ReportTask;
   n: number;
   allowDeskType: boolean;
-  stages: { code: string; title: string }[];
+  stages: { code: string; title: string; workItems: WorkItem[] }[];
   objectCode: string;
   reportDate: string;
   onChange: (patch: Partial<ReportTask>) => void;
@@ -61,7 +66,13 @@ export const TaskEditorRow = ({
           <SysSelectField
             label="Проект"
             value={task.subproject}
-            onChange={(e: any) => onChange({ subproject: e.target.value })}
+            onChange={(e: any) => {
+              const nextCode = e.target.value;
+              // The previously picked work item belongs to the old project —
+              // drop it rather than leave a stale cross-project link.
+              const stillValid = stages.find((s) => s.code === nextCode)?.workItems.some((w) => w.id === task.workItemId);
+              onChange({ subproject: nextCode, ...(stillValid ? {} : { workItemId: undefined }) });
+            }}
             options={stages.map((s) => ({ value: s.code, label: s.code }))}
           />
           {allowDeskType && (
@@ -73,6 +84,19 @@ export const TaskEditorRow = ({
             />
           )}
         </div>
+
+        {(() => {
+          const workItems = stages.find((s) => s.code === task.subproject)?.workItems ?? [];
+          return workItems.length > 0 ? (
+            <SysSelectField
+              label="Работа"
+              hint="к какой работе из состава относится эта задача"
+              value={task.workItemId ?? ''}
+              onChange={(e: any) => onChange({ workItemId: e.target.value || undefined })}
+              options={[{ value: '', label: '— не привязана —' }, ...workItems.filter((w) => w.id).map((w) => ({ value: w.id as string, label: workItemLabel(w) }))]}
+            />
+          ) : null;
+        })()}
 
         <SysLabeledField
           label="Название"

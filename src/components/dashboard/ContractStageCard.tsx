@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { MonoLabel } from '../primitives';
 import { SysButton } from '../form';
 import { SYS } from '../../theme/tokens';
@@ -5,7 +6,9 @@ import { shortDate, type ContractStage } from '../../mocks/dashboard';
 import { StageTimeline } from './StageTimeline';
 import { EventColumn } from './EventColumn';
 
-export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; canEdit: boolean; onEdit: () => void }) => (
+export const ContractStageCard = ({ s, canEdit, onEdit, projectCode }: { s: ContractStage; canEdit: boolean; onEdit: () => void; projectCode: string }) => {
+  const navigate = useNavigate();
+  return (
   <section style={{ background: SYS.paper, border: `1px solid ${SYS.line}`, padding: 32, opacity: s.readiness === 100 ? 0.55 : 1 }}>
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
       <div>
@@ -67,8 +70,14 @@ export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; ca
             </div>
           )}
           {s.workItems.map((w, i) => (
-            <div key={i} style={{ padding: '9px 0', borderTop: i === 0 ? 'none' : `1px solid ${SYS.line}`, display: 'grid', gridTemplateColumns: '1fr 64px 34px', gap: 10, alignItems: 'center' }}>
+            <div
+              key={w.id ?? i}
+              title={w.id ? 'посмотреть дни, когда велась эта работа' : undefined}
+              onClick={() => w.id && navigate(`/${projectCode}/work/${w.id}`)}
+              style={{ padding: '9px 0', borderTop: i === 0 ? 'none' : `1px solid ${SYS.line}`, display: 'grid', gridTemplateColumns: '1fr 64px 34px', gap: 10, alignItems: 'center', cursor: w.id ? 'pointer' : 'default' }}
+            >
               <div style={{ fontSize: 12.5, lineHeight: 1.3 }}>
+                {w.tag && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: SYS.red, marginRight: 6 }}>{w.tag}</span>}
                 {w.title}{w.qty && <span style={{ color: SYS.muted }}> · {w.qty}</span>}
               </div>
               <div style={{ height: 4, background: '#eae7dc', position: 'relative' }}>
@@ -91,4 +100,5 @@ export const ContractStageCard = ({ s, canEdit, onEdit }: { s: ContractStage; ca
       </div>
     </div>
   </section>
-);
+  );
+};

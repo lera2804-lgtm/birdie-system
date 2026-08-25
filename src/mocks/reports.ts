@@ -82,6 +82,7 @@ export interface Photo {
 export interface ReportTask {
   id: string;
   subproject: string;
+  workItemId?: string;
   kind: TaskKind;
   title: string;
   photos: Photo[];

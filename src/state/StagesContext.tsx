@@ -24,7 +24,7 @@ interface StageRow {
   start_date: string | null;
   meeting_date: string | null;
   handover_date: string | null;
-  work_items: { title: string; qty: string | null; pct: number }[];
+  work_items: { id: string; title: string; qty: string | null; pct: number; tag: string | null }[];
   stage_events: { tone: 'plan' | 'fact'; event_date: string; title: string }[];
 }
 
@@ -39,23 +39,38 @@ const fromRow = (row: StageRow): ContractStage => ({
   meeting: row.meeting_date,
   handover: row.handover_date,
   today: todayISO(),
-  workItems: row.work_items.map((w): WorkItem => ({ title: w.title, qty: w.qty ?? undefined, pct: w.pct })),
+  workItems: row.work_items.map((w): WorkItem => ({ id: w.id, title: w.title, qty: w.qty ?? undefined, pct: w.pct, tag: w.tag ?? undefined })),
   planEvents: row.stage_events.filter((e) => e.tone === 'plan').map((e): StageEvent => ({ date: e.event_date, title: e.title })),
   factEvents: row.stage_events.filter((e) => e.tone === 'fact').map((e): StageEvent => ({ date: e.event_date, title: e.title })),
 });
 
-// Stage editors always submit the complete draft (work items + events
-// included), so children are synced by deleting and reinserting the full
-// set rather than diffing — simpler and matches how the UI already commits.
+// Stage editors always submit the complete draft, so events are synced by
+// deleting and reinserting the full set — simpler, and nothing outside a
+// stage ever references an event's id.
+//
+// work_items are different: report_tasks can link to a specific work_item
+// by id (see 0007_work_item_links.sql), so a delete-and-reinsert here would
+// silently drop that link every time someone just tweaks a % or reorders
+// the list. Existing rows are updated in place instead; only rows the
+// caller no longer lists are deleted, and rows with no id (freshly added
+// in the editor) are inserted.
 const writeChildren = async (stageId: string, stage: ContractStage) => {
-  await supabase.from('work_items').delete().eq('stage_id', stageId);
-  await supabase.from('stage_events').delete().eq('stage_id', stageId);
+  const { data: existing } = await supabase.from('work_items').select('id').eq('stage_id', stageId);
+  const existingIds = new Set((existing ?? []).map((r) => r.id as string));
+  const keptIds = new Set(stage.workItems.filter((w) => w.id).map((w) => w.id as string));
+  const toDelete = [...existingIds].filter((id) => !keptIds.has(id));
+  if (toDelete.length > 0) await supabase.from('work_items').delete().in('id', toDelete);
 
-  if (stage.workItems.length > 0) {
-    await supabase.from('work_items').insert(
-      stage.workItems.map((w, i) => ({ stage_id: stageId, title: w.title, qty: w.qty ?? null, pct: w.pct, position: i })),
-    );
-  }
+  await Promise.all(
+    stage.workItems.map((w, i) => {
+      const payload = { title: w.title, qty: w.qty ?? null, pct: w.pct, tag: w.tag ?? null, position: i };
+      return w.id
+        ? supabase.from('work_items').update(payload).eq('id', w.id)
+        : supabase.from('work_items').insert({ ...payload, stage_id: stageId });
+    }),
+  );
+
+  await supabase.from('stage_events').delete().eq('stage_id', stageId);
   const events = [
     ...stage.planEvents.map((e) => ({ stage_id: stageId, tone: 'plan' as const, event_date: e.date, title: e.title })),
     ...stage.factEvents.map((e) => ({ stage_id: stageId, tone: 'fact' as const, event_date: e.date, title: e.title })),
@@ -73,7 +88,7 @@ export const StagesProvider = ({ projectCode, children }: { projectCode: string;
     setLoading(true);
     const { data } = await supabase
       .from('stages')
-      .select('code, title, readiness, updated_on, active, position, start_date, meeting_date, handover_date, work_items(title, qty, pct, position), stage_events(tone, event_date, title)')
+      .select('code, title, readiness, updated_on, active, position, start_date, meeting_date, handover_date, work_items(id, title, qty, pct, tag, position), stage_events(tone, event_date, title)')
       .eq('object_code', projectCode)
       .order('position')
       .order('position', { foreignTable: 'work_items' });

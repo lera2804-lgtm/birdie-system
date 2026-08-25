@@ -25,7 +25,14 @@ const EditWorkRow = ({
     onEdit({ title: t, qty: qty || undefined });
   };
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 50px 16px 20px', gap: 10, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${SYS.line}` }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 120px 50px 16px 20px', gap: 10, alignItems: 'center', padding: '10px 0', borderTop: `1px solid ${SYS.line}` }}>
+      <input
+        value={w.tag ?? ''}
+        onChange={(e) => onEdit({ tag: e.target.value || undefined })}
+        placeholder="тег"
+        title="короткий тег для этой работы — используется в пикере при добавлении задачи в отчёт"
+        style={{ border: `1px solid ${SYS.line}`, outline: 'none', background: 'transparent', fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: SYS.ink2, padding: '6px 8px', width: '100%' }}
+      />
       <input
         value={combined}
         onChange={handleChange}
@@ -46,18 +53,21 @@ const EditWorkRow = ({
 const AddWorkForm = ({ onAdd }: { onAdd: (item: WorkItem) => void }) => {
   const [title, setTitle] = useState('');
   const [qty, setQty] = useState('');
+  const [tag, setTag] = useState('');
   const submit = () => {
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), qty: qty.trim() || undefined, pct: 0 });
+    onAdd({ title: title.trim(), qty: qty.trim() || undefined, pct: 0, tag: tag.trim() || undefined });
     setTitle('');
     setQty('');
+    setTag('');
   };
   return (
     <div style={{ border: `1px solid ${SYS.line}`, padding: 16, marginTop: 14 }}>
       <div style={{ margin: '-16px -16px 14px', padding: '10px 16px', background: '#EEEDED' }}>
         <MonoLabel color={SYS.ink} style={{ fontSize: 11 }}>+ новая работа</MonoLabel>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr 140px', gap: 10 }}>
+        <SysLabeledField label="Тег" hint="для пикера" placeholder="напр. Кровля" value={tag} onChange={(e: any) => setTag(e.target.value)} />
         <SysLabeledField label="Название работы" placeholder="напр. Обработка приствольных кругов" value={title} onChange={(e: any) => setTitle(e.target.value)} />
         <SysLabeledField label="Кол-во, ед." placeholder="напр. 120 шт." value={qty} onChange={(e: any) => setQty(e.target.value)} />
       </div>

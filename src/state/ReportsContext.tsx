@@ -8,6 +8,7 @@ interface ReportsState {
   reports: Record<string, DayReport>;
   loading: boolean;
   saveReport: (date: string, report: DayReport, markEdited?: boolean) => Promise<{ error: string | null }>;
+  getDaysForWorkItem: (workItemId: string) => Promise<{ dates: string[]; error: string | null }>;
 }
 
 const ReportsContext = createContext<ReportsState | null>(null);
@@ -18,7 +19,7 @@ interface ReportRow {
   milestone_tag: string | null;
   is_draft: boolean;
   edited_at: string | null;
-  report_tasks: { id: string; stage_code: string | null; kind: 'field' | 'desk'; title: string; position: number; report_photos: { id: string; storage_path: string; position: number }[] }[];
+  report_tasks: { id: string; stage_code: string | null; work_item_id: string | null; kind: 'field' | 'desk'; title: string; position: number; report_photos: { id: string; storage_path: string; position: number }[] }[];
   report_office_rows: { id: string; side: 'front' | 'back'; qty: string; role: string; position: number }[];
 }
 
@@ -38,6 +39,7 @@ const fromRow = (row: ReportRow): DayReport => {
     .map((t) => ({
       id: t.id,
       subproject: t.stage_code ?? '',
+      workItemId: t.work_item_id ?? undefined,
       kind: t.kind,
       title: t.title,
       photos: [...t.report_photos]
@@ -67,7 +69,7 @@ export const ReportsProvider = ({ projectCode, children }: { projectCode: string
     setLoading(true);
     const { data } = await supabase
       .from('reports')
-      .select('report_date, milestone, milestone_tag, is_draft, edited_at, report_tasks(id, stage_code, kind, title, position, report_photos(id, storage_path, position)), report_office_rows(id, side, qty, role, position)')
+      .select('report_date, milestone, milestone_tag, is_draft, edited_at, report_tasks(id, stage_code, work_item_id, kind, title, position, report_photos(id, storage_path, position)), report_office_rows(id, side, qty, role, position)')
       .eq('object_code', projectCode);
     const out: Record<string, DayReport> = {};
     for (const row of (data ?? []) as unknown as ReportRow[]) {
@@ -119,7 +121,7 @@ export const ReportsProvider = ({ projectCode, children }: { projectCode: string
     if (report.tasks.length > 0) {
       const { data: insertedTasks, error: taskError } = await supabase
         .from('report_tasks')
-        .insert(report.tasks.map((t, i) => ({ report_id: reportId, stage_code: t.subproject || null, kind: t.kind, title: t.title, position: i })))
+        .insert(report.tasks.map((t, i) => ({ report_id: reportId, stage_code: t.subproject || null, work_item_id: t.workItemId ?? null, kind: t.kind, title: t.title, position: i })))
         .select('id');
       if (taskError || !insertedTasks) return { error: taskError?.message ?? 'Не удалось сохранить задачи отчёта' };
 
@@ -145,8 +147,23 @@ export const ReportsProvider = ({ projectCode, children }: { projectCode: string
     return { error: null };
   };
 
+  // Not folded into the loaded `reports` state since that's scoped to the
+  // days already fetched for the calendar/day views — this looks across
+  // every day the work item was ever tagged in, on demand.
+  const getDaysForWorkItem = async (workItemId: string) => {
+    const { data, error } = await supabase
+      .from('report_tasks')
+      .select('reports(report_date)')
+      .eq('work_item_id', workItemId);
+    if (error) return { dates: [], error: error.message };
+    const dates = Array.from(
+      new Set((data ?? []).map((r) => (r.reports as unknown as { report_date: string } | null)?.report_date).filter((d): d is string => !!d)),
+    ).sort((a, b) => b.localeCompare(a));
+    return { dates, error: null };
+  };
+
   return (
-    <ReportsContext.Provider value={{ reports, loading, saveReport }}>
+    <ReportsContext.Provider value={{ reports, loading, saveReport, getDaysForWorkItem }}>
       {children}
     </ReportsContext.Provider>
   );
