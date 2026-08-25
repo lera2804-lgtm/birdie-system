@@ -146,7 +146,13 @@ export const ReportDayPage = () => {
                         <div style={{ marginBottom: t.photos.length ? 12 : 0 }}><span style={{ fontSize: 14.5, lineHeight: 1.4 }}>{t.title}</span></div>
                         {t.photos.length > 0 && <TaskThumbGrid task={t} onOpen={(index) => setLightbox({ task: t, index })} />}
                       </div>
-                      <Pill tone="ghost" color={t.kind === 'field' ? SYS.muted : SYS.ink}>{t.kind === 'field' ? 'полевая' : 'кабинетная'}</Pill>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                        {(() => {
+                          const workItem = sp.workItems.find((w) => w.id === t.workItemId);
+                          return workItem ? <Pill tone="ghost" color={SYS.red}>{workItem.tag || workItem.title}</Pill> : null;
+                        })()}
+                        <Pill tone="ghost" color={t.kind === 'field' ? SYS.muted : SYS.ink}>{t.kind === 'field' ? 'полевая' : 'кабинетная'}</Pill>
+                      </div>
                     </div>
                   ))}
                 </div>

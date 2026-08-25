@@ -73,7 +73,13 @@ export const ReportDayMobilePage = () => {
                         <MonoLabel color={SYS.muted} style={{ fontSize: 11 }}>{String(i + 1).padStart(2, '0')}</MonoLabel>
                         <span style={{ fontSize: 14, lineHeight: 1.4 }}>{t.title}</span>
                       </span>
-                      <Pill tone="ghost" color={t.kind === 'field' ? SYS.muted : SYS.ink}>{t.kind === 'field' ? 'полевая' : 'кабинетная'}</Pill>
+                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flex: 'none' }}>
+                        {(() => {
+                          const workItem = sp.workItems.find((w) => w.id === t.workItemId);
+                          return workItem ? <Pill tone="ghost" color={SYS.red}>{workItem.tag || workItem.title}</Pill> : null;
+                        })()}
+                        <Pill tone="ghost" color={t.kind === 'field' ? SYS.muted : SYS.ink}>{t.kind === 'field' ? 'полевая' : 'кабинетная'}</Pill>
+                      </span>
                     </div>
                     {t.photos.length > 0 && (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
