@@ -120,7 +120,7 @@ export const NewStageModal = ({ projectCode, onClose }: { projectCode: string; o
           </div>
           {workItems.map((w, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 40px 16px 20px', gap: 10, alignItems: 'center', padding: '8px 0', borderTop: `1px solid ${SYS.line}`, fontSize: 12.5 }}>
-              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: SYS.muted }}>{w.tag}</span>
+              <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10.5, color: SYS.muted, textAlign: 'left' }}>{w.tag && `#${w.tag}`}</span>
               <span>{w.title}{w.qty && <span style={{ color: SYS.muted }}> · {w.qty}</span>}</span>
               <span style={{ textAlign: 'right', fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: w.pct === 100 ? SYS.ink : SYS.red }}>{w.pct}%</span>
               <ReorderButtons

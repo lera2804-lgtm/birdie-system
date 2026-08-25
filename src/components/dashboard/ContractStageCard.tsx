@@ -77,8 +77,8 @@ export const ContractStageCard = ({ s, canEdit, onEdit, projectCode }: { s: Cont
               style={{ padding: '9px 0', borderTop: i === 0 ? 'none' : `1px solid ${SYS.line}`, display: 'grid', gridTemplateColumns: '1fr 64px 34px', gap: 10, alignItems: 'center', cursor: w.id ? 'pointer' : 'default' }}
             >
               <div style={{ fontSize: 12.5, lineHeight: 1.3 }}>
-                {w.tag && <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: SYS.red, marginRight: 6 }}>{w.tag}</span>}
                 {w.title}{w.qty && <span style={{ color: SYS.muted }}> · {w.qty}</span>}
+                {w.tag && <span style={{ display: 'block', textAlign: 'left', marginTop: 3, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: SYS.red }}>#{w.tag}</span>}
               </div>
               <div style={{ height: 4, background: '#eae7dc', position: 'relative' }}>
                 <div style={{ position: 'absolute', inset: 0, width: `${w.pct}%`, background: w.pct === 100 ? SYS.ink : SYS.red }} />

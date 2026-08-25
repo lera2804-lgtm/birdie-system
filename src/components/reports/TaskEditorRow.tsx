@@ -9,7 +9,7 @@ import { useToasts } from '../../state/ToastContext';
 
 // Short label for the work-item picker: a manually set tag if there is one,
 // otherwise the title clipped so a long work item doesn't blow out the row.
-const workItemLabel = (w: WorkItem): string => w.tag || (w.title.length > 28 ? `${w.title.slice(0, 28)}…` : w.title);
+const workItemLabel = (w: WorkItem): string => (w.tag ? `#${w.tag}` : (w.title.length > 28 ? `${w.title.slice(0, 28)}…` : w.title));
 
 const MAX_PHOTOS = 4;
 

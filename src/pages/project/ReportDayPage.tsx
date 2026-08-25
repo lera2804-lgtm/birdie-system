@@ -149,7 +149,11 @@ export const ReportDayPage = () => {
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                         {(() => {
                           const workItem = sp.workItems.find((w) => w.id === t.workItemId);
-                          return workItem ? <Pill tone="ghost" color={SYS.red}>{workItem.tag || workItem.title}</Pill> : null;
+                          return workItem ? (
+                            <span title="посмотреть все дни по этой работе" onClick={() => navigate(`/${projectCode}/work/${workItem.id}`)} style={{ cursor: 'pointer' }}>
+                              <Pill tone="ghost" color={SYS.red}>{workItem.tag ? `#${workItem.tag}` : workItem.title}</Pill>
+                            </span>
+                          ) : null;
                         })()}
                         <Pill tone="ghost" color={t.kind === 'field' ? SYS.muted : SYS.ink}>{t.kind === 'field' ? 'полевая' : 'кабинетная'}</Pill>
                       </div>
