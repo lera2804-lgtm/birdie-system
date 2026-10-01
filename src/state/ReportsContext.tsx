@@ -8,6 +8,7 @@ interface ReportsState {
   reports: Record<string, DayReport>;
   loading: boolean;
   saveReport: (date: string, report: DayReport, markEdited?: boolean) => Promise<{ error: string | null }>;
+  deleteReport: (date: string) => Promise<{ error: string | null }>;
   getDaysForWorkItem: (workItemId: string) => Promise<{ dates: string[]; error: string | null }>;
 }
 
@@ -147,6 +148,20 @@ export const ReportsProvider = ({ projectCode, children }: { projectCode: string
     return { error: null };
   };
 
+  // Row deletion in the DB cascades to report_tasks/report_photos/
+  // report_office_rows on its own (see 0001_init.sql), but storage files
+  // aren't part of that cascade — gather their paths from the already-
+  // loaded report before the row (and with it, the path reference) is gone.
+  const deleteReport = async (date: string) => {
+    const report = reports[date];
+    const paths = (report?.tasks ?? []).flatMap((t) => t.photos.map((p) => pathFromPublicUrl('report-photos', p.url)).filter((p): p is string => !!p));
+    const { error } = await supabase.from('reports').delete().eq('object_code', projectCode).eq('report_date', date);
+    if (error) return { error: error.message };
+    if (paths.length > 0) await supabase.storage.from('report-photos').remove(paths);
+    await load();
+    return { error: null };
+  };
+
   // Not folded into the loaded `reports` state since that's scoped to the
   // days already fetched for the calendar/day views — this looks across
   // every day the work item was ever tagged in, on demand.
@@ -163,7 +178,7 @@ export const ReportsProvider = ({ projectCode, children }: { projectCode: string
   };
 
   return (
-    <ReportsContext.Provider value={{ reports, loading, saveReport, getDaysForWorkItem }}>
+    <ReportsContext.Provider value={{ reports, loading, saveReport, deleteReport, getDaysForWorkItem }}>
       {children}
     </ReportsContext.Provider>
   );

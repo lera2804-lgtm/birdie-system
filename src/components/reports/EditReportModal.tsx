@@ -12,12 +12,13 @@ import { useToasts } from '../../state/ToastContext';
 
 export const EditReportModal = ({ date, report, onClose }: { date: string; report: DayReport; onClose: () => void }) => {
   const { projectCode } = useParams();
-  const { saveReport } = useReports();
+  const { saveReport, deleteReport } = useReports();
   const { stages } = useStages();
   const { addToast } = useToasts();
   const [draft, setDraft] = useState<DayReport>(() => ({ ...report }));
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmingDeleteReport, setConfirmingDeleteReport] = useState(false);
 
   const save = async () => {
     setSaving(true);
@@ -57,6 +58,22 @@ export const EditReportModal = ({ date, report, onClose }: { date: string; repor
             objectCode={projectCode ?? ''}
             onRequestDeleteTask={setDeletingId}
           />
+
+          <div style={{ marginTop: 28, borderTop: `1px solid ${SYS.line}`, paddingTop: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <MonoLabel color={SYS.red} style={{ fontSize: 10 }}>опасная зона</MonoLabel>
+              <div style={{ marginTop: 6, fontSize: 12, color: SYS.muted, lineHeight: 1.45, maxWidth: 380 }}>
+                Отчёт за {formatLong(date)} будет удалён целиком — вместе со всеми задачами и фото. Клиент и команда перестанут его видеть.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfirmingDeleteReport(true)}
+              style={{ padding: '11px 20px', background: 'transparent', color: SYS.red, border: `1px solid ${SYS.red}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              Удалить отчёт за этот день
+            </button>
+          </div>
         </div>
 
         <div style={{ padding: '20px 32px 28px', display: 'flex', gap: 10, borderTop: `1px solid ${SYS.line}` }}>
@@ -75,6 +92,26 @@ export const EditReportModal = ({ date, report, onClose }: { date: string; repor
           onConfirm={() => {
             setDraft((d) => ({ ...d, tasks: d.tasks.filter((t) => t.id !== deletingId) }));
             setDeletingId(null);
+          }}
+        />
+      )}
+
+      {confirmingDeleteReport && (
+        <ConfirmModal
+          kicker="опасная зона · подтверждение"
+          title="Удалить отчёт за этот день?"
+          confirmLabel="Удалить отчёт"
+          message={`Отчёт за ${formatLong(date)} будет удалён без возможности восстановления — вместе со всеми задачами и фото.`}
+          onCancel={() => setConfirmingDeleteReport(false)}
+          onConfirm={async () => {
+            const { error } = await deleteReport(date);
+            setConfirmingDeleteReport(false);
+            if (error) {
+              addToast('error', `Не удалось удалить отчёт: ${error}`);
+              return;
+            }
+            addToast('success', `Отчёт за ${formatLong(date)} удалён.`);
+            onClose();
           }}
         />
       )}
