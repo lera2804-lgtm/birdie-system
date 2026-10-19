@@ -9,7 +9,7 @@ interface ReportsState {
   loading: boolean;
   saveReport: (date: string, report: DayReport, markEdited?: boolean) => Promise<{ error: string | null }>;
   deleteReport: (date: string) => Promise<{ error: string | null }>;
-  getDaysForWorkItem: (workItemId: string) => Promise<{ dates: string[]; error: string | null }>;
+  getDaysForWorkItem: (workItemId: string) => Promise<{ days: { date: string; count: number }[]; total: number; error: string | null }>;
 }
 
 const ReportsContext = createContext<ReportsState | null>(null);
@@ -165,16 +165,23 @@ export const ReportsProvider = ({ projectCode, children }: { projectCode: string
   // Not folded into the loaded `reports` state since that's scoped to the
   // days already fetched for the calendar/day views — this looks across
   // every day the work item was ever tagged in, on demand.
+  // Per-day counts and a grand total of every report task ever tagged with
+  // this work item — aggregated client-side since it's a small, scoped set.
   const getDaysForWorkItem = async (workItemId: string) => {
     const { data, error } = await supabase
       .from('report_tasks')
       .select('reports(report_date)')
       .eq('work_item_id', workItemId);
-    if (error) return { dates: [], error: error.message };
-    const dates = Array.from(
-      new Set((data ?? []).map((r) => (r.reports as unknown as { report_date: string } | null)?.report_date).filter((d): d is string => !!d)),
-    ).sort((a, b) => b.localeCompare(a));
-    return { dates, error: null };
+    if (error) return { days: [], total: 0, error: error.message };
+    const counts = new Map<string, number>();
+    for (const r of data ?? []) {
+      const date = (r.reports as unknown as { report_date: string } | null)?.report_date;
+      if (!date) continue;
+      counts.set(date, (counts.get(date) ?? 0) + 1);
+    }
+    const days = Array.from(counts, ([date, count]) => ({ date, count })).sort((a, b) => b.date.localeCompare(a.date));
+    const total = days.reduce((s, d) => s + d.count, 0);
+    return { days, total, error: null };
   };
 
   return (
