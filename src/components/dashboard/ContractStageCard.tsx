@@ -8,6 +8,14 @@ import { EventColumn } from './EventColumn';
 
 export const ContractStageCard = ({ s, canEdit, onEdit, projectCode }: { s: ContractStage; canEdit: boolean; onEdit: () => void; projectCode: string }) => {
   const navigate = useNavigate();
+  // Plan events whose date has already passed read as done in practice —
+  // fold them into "факт" on display rather than leaving them stranded
+  // under "план". This is a view-only merge: the stored tone never
+  // changes, so a plan item still shows here even after a separate, real
+  // fact event for the same milestone is added later.
+  const todayStr = s.today ?? new Date().toISOString().slice(0, 10);
+  const upcomingPlan = s.planEvents.filter((e) => e.date >= todayStr);
+  const factWithElapsedPlan = [...s.factEvents, ...s.planEvents.filter((e) => e.date < todayStr)];
   return (
   <section style={{ background: SYS.paper, border: `1px solid ${SYS.line}`, padding: 32, opacity: s.readiness === 100 ? 0.55 : 1 }}>
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -94,8 +102,8 @@ export const ContractStageCard = ({ s, canEdit, onEdit, projectCode }: { s: Cont
           <MonoLabel color={SYS.ink} style={{ fontSize: 10 }}>события</MonoLabel>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <EventColumn label="план" sub="запланировано" tone="plan" events={s.planEvents} />
-          <EventColumn label="факт" sub="выполнено" tone="fact" events={s.factEvents} />
+          <EventColumn label="план" sub="запланировано" tone="plan" events={upcomingPlan} />
+          <EventColumn label="факт" sub="выполнено" tone="fact" events={factWithElapsedPlan} />
         </div>
       </div>
     </div>
