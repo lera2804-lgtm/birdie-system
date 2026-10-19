@@ -169,13 +169,19 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
   };
 
   const updateMedia = async (id: string, patch: Partial<MediaItem>) => {
+    const current = media.find((m) => m.id === id);
     setMedia((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
     const payload: Record<string, unknown> = {};
     if (patch.kind !== undefined) payload.kind = patch.kind;
     if (patch.name !== undefined) payload.name = patch.name;
     if (patch.date !== undefined) payload.item_date = fromShortDate(patch.date);
     if ('driveUrl' in patch) payload.drive_url = patch.driveUrl ?? null;
-    if ('storagePath' in patch) payload.storage_path = patch.storagePath ?? null;
+    if ('storagePath' in patch) {
+      payload.storage_path = patch.storagePath ?? null;
+      if (current?.storagePath && current.storagePath !== patch.storagePath) {
+        await supabase.storage.from('media').remove([current.storagePath]);
+      }
+    }
     const { error } = await supabase.from('media_items').update(payload).eq('id', id);
     return { error: error?.message ?? null };
   };

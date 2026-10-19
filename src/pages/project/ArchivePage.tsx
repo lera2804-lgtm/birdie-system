@@ -7,9 +7,10 @@ import { SectionHead } from '../../components/SectionHead';
 import { SYS } from '../../theme/tokens';
 import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useArchive } from '../../state/ArchiveContext';
-import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type KeyFileStatus, type MediaKind } from '../../mocks/archive';
+import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type KeyFileStatus, type MediaItem, type MediaKind } from '../../mocks/archive';
 import { UploadDocModal } from '../../components/archive/UploadDocModal';
 import { EditArchiveFileModal } from '../../components/archive/EditArchiveFileModal';
+import { EditMediaModal } from '../../components/archive/EditMediaModal';
 import { UploadMediaModal } from '../../components/archive/UploadMediaModal';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { useToasts } from '../../state/ToastContext';
@@ -80,6 +81,7 @@ export const ArchivePage = () => {
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [deletingFile, setDeletingFile] = useState<ArchiveFile | null>(null);
   const [editingFile, setEditingFile] = useState<ArchiveFile | null>(null);
+  const [editingMedia, setEditingMedia] = useState<MediaItem | null>(null);
 
   if (!role || !projectCode) return null;
   const canManage = role === 'admin' || role === 'project_manager';
@@ -339,6 +341,7 @@ export const ArchivePage = () => {
                       )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <a href={m.driveUrl || m.fileUrl || undefined} target="_blank" rel="noreferrer" style={{ padding: '10px 18px', background: 'transparent', color: SYS.ink, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', textDecoration: 'none' }}>Посмотреть</a>
+                        {canManage && <span title="редактировать" onClick={() => setEditingMedia(m)} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer' }}>✎</span>}
                         {canManage && <span title="удалить" onClick={() => removeMedia(m.id)} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer' }}>✕</span>}
                       </div>
                     </div>
@@ -361,6 +364,7 @@ export const ArchivePage = () => {
       {uploadingDoc && <UploadDocModal objectCode={projectCode} onClose={() => setUploadingDoc(false)} />}
       {uploadingMedia && <UploadMediaModal objectCode={projectCode} onClose={() => setUploadingMedia(false)} />}
       {editingFile && <EditArchiveFileModal file={editingFile} objectCode={projectCode} onClose={() => setEditingFile(null)} />}
+      {editingMedia && <EditMediaModal item={editingMedia} objectCode={projectCode} onClose={() => setEditingMedia(null)} />}
       {deletingFile && (
         <ConfirmModal
           title="Удалить файл?"
