@@ -9,6 +9,7 @@ import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useArchive } from '../../state/ArchiveContext';
 import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type KeyFileStatus, type MediaKind } from '../../mocks/archive';
 import { UploadDocModal } from '../../components/archive/UploadDocModal';
+import { EditArchiveFileModal } from '../../components/archive/EditArchiveFileModal';
 import { UploadMediaModal } from '../../components/archive/UploadMediaModal';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { useToasts } from '../../state/ToastContext';
@@ -78,6 +79,7 @@ export const ArchivePage = () => {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [deletingFile, setDeletingFile] = useState<ArchiveFile | null>(null);
+  const [editingFile, setEditingFile] = useState<ArchiveFile | null>(null);
 
   if (!role || !projectCode) return null;
   const canManage = role === 'admin' || role === 'project_manager';
@@ -271,6 +273,7 @@ export const ArchivePage = () => {
                   ) : (
                     <span style={{ padding: '10px 18px', background: 'transparent', color: SYS.muted, border: `1px solid ${SYS.line}`, fontFamily: "'JetBrains Mono', monospace", fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Нет файла</span>
                   )}
+                  {canManage && <span title="редактировать" onClick={() => setEditingFile(f)} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer' }}>✎</span>}
                   {canManage && <span title="удалить" onClick={() => setDeletingFile(f)} style={{ fontSize: 13, color: SYS.muted, cursor: 'pointer' }}>✕</span>}
                 </div>
               </div>
@@ -357,6 +360,7 @@ export const ArchivePage = () => {
 
       {uploadingDoc && <UploadDocModal objectCode={projectCode} onClose={() => setUploadingDoc(false)} />}
       {uploadingMedia && <UploadMediaModal objectCode={projectCode} onClose={() => setUploadingMedia(false)} />}
+      {editingFile && <EditArchiveFileModal file={editingFile} onClose={() => setEditingFile(null)} />}
       {deletingFile && (
         <ConfirmModal
           title="Удалить файл?"
