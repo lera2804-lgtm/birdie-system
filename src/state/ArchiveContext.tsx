@@ -125,9 +125,9 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
     if (patch.variant !== undefined) payload.variant = patch.variant;
     if (patch.created !== undefined) payload.created_date = fromShortDate(patch.created);
     if (patch.key !== undefined) payload.is_key = patch.key;
-    if (patch.keyStatus !== undefined) payload.key_status = patch.keyStatus;
+    if ('keyStatus' in patch) payload.key_status = patch.keyStatus ?? null;
     if (patch.clientHidden !== undefined) payload.client_hidden = patch.clientHidden;
-    if (patch.driveUrl !== undefined) payload.drive_url = patch.driveUrl;
+    if ('driveUrl' in patch) payload.drive_url = patch.driveUrl ?? null;
     if (patch.type !== undefined) payload.type = patch.type;
     if ('storagePath' in patch) {
       payload.storage_path = patch.storagePath ?? null;
@@ -174,8 +174,8 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
     if (patch.kind !== undefined) payload.kind = patch.kind;
     if (patch.name !== undefined) payload.name = patch.name;
     if (patch.date !== undefined) payload.item_date = fromShortDate(patch.date);
-    if (patch.driveUrl !== undefined) payload.drive_url = patch.driveUrl;
-    if (patch.storagePath !== undefined) payload.storage_path = patch.storagePath;
+    if ('driveUrl' in patch) payload.drive_url = patch.driveUrl ?? null;
+    if ('storagePath' in patch) payload.storage_path = patch.storagePath ?? null;
     const { error } = await supabase.from('media_items').update(payload).eq('id', id);
     return { error: error?.message ?? null };
   };
