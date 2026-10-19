@@ -117,6 +117,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
   // fire on every keystroke) — a full reload-per-keystroke round trip would
   // make typing feel broken. The write to Supabase happens in the background.
   const updateFile = async (id: string, patch: Partial<ArchiveFile>) => {
+    const current = allFiles.find((f) => f.id === id);
     setAllFiles((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
     const payload: Record<string, unknown> = {};
     if (patch.name !== undefined) payload.name = patch.name;
@@ -127,6 +128,15 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
     if (patch.keyStatus !== undefined) payload.key_status = patch.keyStatus;
     if (patch.clientHidden !== undefined) payload.client_hidden = patch.clientHidden;
     if (patch.driveUrl !== undefined) payload.drive_url = patch.driveUrl;
+    if (patch.type !== undefined) payload.type = patch.type;
+    if ('storagePath' in patch) {
+      payload.storage_path = patch.storagePath ?? null;
+      // Replacing or removing the file shouldn't leave the old object
+      // behind in storage.
+      if (current?.storagePath && current.storagePath !== patch.storagePath) {
+        await supabase.storage.from('documents').remove([current.storagePath]);
+      }
+    }
     const { error } = await supabase.from('archive_files').update(payload).eq('id', id);
     return { error: error?.message ?? null };
   };

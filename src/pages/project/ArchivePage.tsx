@@ -360,7 +360,7 @@ export const ArchivePage = () => {
 
       {uploadingDoc && <UploadDocModal objectCode={projectCode} onClose={() => setUploadingDoc(false)} />}
       {uploadingMedia && <UploadMediaModal objectCode={projectCode} onClose={() => setUploadingMedia(false)} />}
-      {editingFile && <EditArchiveFileModal file={editingFile} onClose={() => setEditingFile(null)} />}
+      {editingFile && <EditArchiveFileModal file={editingFile} objectCode={projectCode} onClose={() => setEditingFile(null)} />}
       {deletingFile && (
         <ConfirmModal
           title="Удалить файл?"
