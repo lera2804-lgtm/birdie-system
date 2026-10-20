@@ -7,7 +7,7 @@ import { SectionHead } from '../../components/SectionHead';
 import { SYS } from '../../theme/tokens';
 import { useObjectRole } from '../../state/ObjectRoleContext';
 import { useArchive } from '../../state/ArchiveContext';
-import { ARCHIVE_BLOCK_FIELD_OBJECT_CODE, fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type KeyFileStatus, type MediaItem, type MediaKind } from '../../mocks/archive';
+import { fromShortDate, parseShortDate, toShortDate, type ArchiveFile, type KeyFileStatus, type MediaItem, type MediaKind } from '../../mocks/archive';
 import { UploadDocModal } from '../../components/archive/UploadDocModal';
 import { EditArchiveFileModal } from '../../components/archive/EditArchiveFileModal';
 import { EditMediaModal } from '../../components/archive/EditMediaModal';
@@ -15,8 +15,7 @@ import { UploadMediaModal } from '../../components/archive/UploadMediaModal';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { useToasts } from '../../state/ToastContext';
 
-const ARCH_COLS = '48px 64px 1fr 130px 110px 110px 110px 150px';
-const ARCH_COLS_WITH_BLOCK = '48px 64px 1fr 110px 90px 90px 110px 110px 150px';
+const ARCH_COLS = '48px 64px 1fr 110px 90px 90px 110px 110px 150px';
 const PAGE_SIZE = 15;
 const MEDIA_PAGE_SIZE = 6;
 
@@ -86,8 +85,6 @@ export const ArchivePage = () => {
 
   if (!role || !projectCode) return null;
   const canManage = role === 'admin' || role === 'project_manager';
-  const showBlock = projectCode === ARCHIVE_BLOCK_FIELD_OBJECT_CODE;
-  const archCols = showBlock ? ARCH_COLS_WITH_BLOCK : ARCH_COLS;
 
   const scopedFiles = canManage ? allFiles : allFiles.filter((f) => !f.clientHidden);
   const sortedMedia = [...media].sort((a, b) => parseShortDate(b.date) - parseShortDate(a.date));
@@ -222,11 +219,8 @@ export const ArchivePage = () => {
               </select>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: archCols, gap: 18, padding: '14px 28px', background: SYS.paper, borderBottom: `1px solid ${SYS.line}` }}>
-              {(showBlock
-                ? ['№', 'ТИП', 'ФАЙЛ', 'АЛЬБОМ/ВЕРСИЯ', 'ВАРИАНТ', 'БЛОК', 'СОЗДАН', 'ЗАГРУЖЕН', 'ДЕЙСТВИЕ']
-                : ['№', 'ТИП', 'ФАЙЛ', 'АЛЬБОМ/ВЕРСИЯ', 'ВАРИАНТ', 'СОЗДАН', 'ЗАГРУЖЕН', 'ДЕЙСТВИЕ']
-              ).map((h, i, arr) => (
+            <div style={{ display: 'grid', gridTemplateColumns: ARCH_COLS, gap: 18, padding: '14px 28px', background: SYS.paper, borderBottom: `1px solid ${SYS.line}` }}>
+              {['№', 'ТИП', 'ФАЙЛ', 'АЛЬБОМ/ВЕРСИЯ', 'ВАРИАНТ', 'БЛОК', 'СОЗДАН', 'ЗАГРУЖЕН', 'ДЕЙСТВИЕ'].map((h, i, arr) => (
                 <MonoLabel key={h} color={SYS.muted} style={{ fontSize: 9.5, textAlign: i === arr.length - 1 ? 'right' : 'left' }}>{h}</MonoLabel>
               ))}
             </div>
@@ -235,7 +229,7 @@ export const ArchivePage = () => {
               <div style={{ padding: '32px 28px', textAlign: 'center', fontSize: 13, color: SYS.muted }}>Ничего не найдено</div>
             )}
             {shown.map((f, i) => (
-              <div key={f.id} style={{ display: 'grid', gridTemplateColumns: archCols, gap: 18, alignItems: 'center', padding: '16px 28px', borderTop: `1px solid ${SYS.line}`, background: SYS.paper, opacity: f.clientHidden && canManage ? 0.72 : 1 }}>
+              <div key={f.id} style={{ display: 'grid', gridTemplateColumns: ARCH_COLS, gap: 18, alignItems: 'center', padding: '16px 28px', borderTop: `1px solid ${SYS.line}`, background: SYS.paper, opacity: f.clientHidden && canManage ? 0.72 : 1 }}>
                 <MonoLabel color={SYS.muted} style={{ fontSize: 11 }}>{String(numberById.get(f.id) ?? i + 1).padStart(2, '0')}</MonoLabel>
                 <div style={{ width: 46, height: 46, background: SYS.bg, border: `1px solid ${SYS.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: SYS.ink2 }}>{f.type}</div>
                 <div style={{ fontSize: 14.5, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -257,11 +251,11 @@ export const ArchivePage = () => {
                 ) : (
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: SYS.ink2 }}>{f.variant}</div>
                 )}
-                {showBlock && (canManage ? (
+                {canManage ? (
                   <EditableCell value={f.block ?? ''} onChange={(v) => updateFile(f.id, { block: v || undefined })} style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: SYS.ink2 }} />
                 ) : (
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: SYS.ink2 }}>{f.block}</div>
-                ))}
+                )}
                 {canManage ? (
                   <EditableCell
                     type="date"
@@ -339,16 +333,14 @@ export const ArchivePage = () => {
                         <span>{m.kind} / {m.name}</span>
                       )}
                     </div>
-                    {showBlock && (
-                      <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                        <MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>блок</MonoLabel>
-                        {canManage ? (
-                          <EditableCell value={m.block ?? ''} onChange={(v) => updateMedia(m.id, { block: v || undefined })} style={{ fontSize: 13, color: SYS.ink2 }} />
-                        ) : (
-                          <span style={{ fontSize: 13, color: SYS.ink2 }}>{m.block || '—'}</span>
-                        )}
-                      </div>
-                    )}
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                      <MonoLabel color={SYS.muted} style={{ fontSize: 9.5 }}>блок</MonoLabel>
+                      {canManage ? (
+                        <EditableCell value={m.block ?? ''} onChange={(v) => updateMedia(m.id, { block: v || undefined })} style={{ fontSize: 13, color: SYS.ink2 }} />
+                      ) : (
+                        <span style={{ fontSize: 13, color: SYS.ink2 }}>{m.block || '—'}</span>
+                      )}
+                    </div>
                     <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       {canManage ? (
                         <EditableCell

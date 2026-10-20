@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { SysButton, SysLabeledField, SysModal, SysSelectField } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { ALLOWED_DOC_EXTENSIONS, ARCHIVE_BLOCK_FIELD_OBJECT_CODE, MAX_UPLOAD_MB, fromShortDate, toShortDate, type ArchiveFile, type KeyFileStatus } from '../../mocks/archive';
+import { ALLOWED_DOC_EXTENSIONS, MAX_UPLOAD_MB, fromShortDate, toShortDate, type ArchiveFile, type KeyFileStatus } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
 import { useToasts } from '../../state/ToastContext';
 import { uploadDocFile } from '../../lib/storage';
@@ -157,9 +157,7 @@ export const EditArchiveFileModal = ({ file, objectCode, onClose }: { file: Arch
           <SysLabeledField label="Альбом / версия" value={album} onChange={(e: any) => setAlbum(e.target.value)} />
           <SysLabeledField label="Вариант" value={variant} onChange={(e: any) => setVariant(e.target.value)} />
         </div>
-        {objectCode === ARCHIVE_BLOCK_FIELD_OBJECT_CODE && (
-          <SysLabeledField label="Блок" placeholder="напр. Блок А" value={block} onChange={(e: any) => setBlock(e.target.value)} />
-        )}
+        <SysLabeledField label="Блок" placeholder="напр. Блок А" value={block} onChange={(e: any) => setBlock(e.target.value)} />
         <SysLabeledField
           label="Дата создания материала"
           type="date"
