@@ -24,6 +24,9 @@ export interface ArchiveFile {
   driveUrl?: string;
   storagePath?: string;
   fileUrl?: string;
+  // Physical building/block label — currently only shown for BIRDIE-10
+  // (see ARCHIVE_BLOCK_FIELD_OBJECT_CODE).
+  block?: string;
   // DB insertion timestamp — the stable basis for the archive's № column,
   // independent of whatever display sort/filter is currently active.
   insertedAt?: string;
@@ -62,6 +65,7 @@ export interface MediaItem {
   // can persist it; fileUrl is derived from it on read via publicUrl().
   storagePath?: string;
   fileUrl?: string;
+  block?: string;
 }
 
 export interface ArchiveData {
@@ -72,3 +76,8 @@ export interface ArchiveData {
 
 export const ALLOWED_DOC_EXTENSIONS = ['pdf', 'dwg', 'xlsx', 'mp4'];
 export const MAX_UPLOAD_MB = 500;
+
+// Object the "Блок" field is currently scoped to — it's a real column on
+// every object's archive rows (nullable, unused elsewhere), but the UI
+// only surfaces it here. Flip this to a list if more objects need it.
+export const ARCHIVE_BLOCK_FIELD_OBJECT_CODE = 'BIRDIE-10';

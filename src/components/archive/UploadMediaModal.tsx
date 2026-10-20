@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { SysButton, SysLabeledField, SysModal, SysSelectField } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { toShortDate, type MediaItem, type MediaKind } from '../../mocks/archive';
+import { ARCHIVE_BLOCK_FIELD_OBJECT_CODE, toShortDate, type MediaItem, type MediaKind } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
 import { useToasts } from '../../state/ToastContext';
 import { uploadMediaFile } from '../../lib/storage';
@@ -16,6 +16,7 @@ export const UploadMediaModal = ({ objectCode, onClose }: { objectCode: string; 
   const [title, setTitle] = useState('');
   const [album, setAlbum] = useState('');
   const [variant, setVariant] = useState('');
+  const [block, setBlock] = useState('');
   const [driveUrl, setDriveUrl] = useState('');
   const [createdDate, setCreatedDate] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -65,6 +66,7 @@ export const UploadMediaModal = ({ objectCode, onClose }: { objectCode: string; 
       date: toShortDate(createdDate),
       driveUrl: driveUrl.trim() || undefined,
       storagePath,
+      block: block.trim() || undefined,
     };
     setSubmitting(true);
     const { error } = await addMedia(media);
@@ -130,6 +132,9 @@ export const UploadMediaModal = ({ objectCode, onClose }: { objectCode: string; 
           <SysLabeledField label="Альбом / версия" placeholder="напр. Alb.3" value={album} onChange={(e: any) => setAlbum(e.target.value)} />
           <SysLabeledField label="Вариант" placeholder="напр. V5" value={variant} onChange={(e: any) => setVariant(e.target.value)} />
         </div>
+        {objectCode === ARCHIVE_BLOCK_FIELD_OBJECT_CODE && (
+          <SysLabeledField label="Блок" placeholder="напр. Блок А" value={block} onChange={(e: any) => setBlock(e.target.value)} />
+        )}
         {!isVideoFile && (
           <SysLabeledField
             label="Ссылка на диск (опционально)"

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { SysButton, SysLabeledField, SysModal, SysSelectField } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { ALLOWED_DOC_EXTENSIONS, MAX_UPLOAD_MB, toShortDate, type ArchiveFile, type KeyFileStatus } from '../../mocks/archive';
+import { ALLOWED_DOC_EXTENSIONS, ARCHIVE_BLOCK_FIELD_OBJECT_CODE, MAX_UPLOAD_MB, toShortDate, type ArchiveFile, type KeyFileStatus } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
 import { useToasts } from '../../state/ToastContext';
 import { uploadDocFile } from '../../lib/storage';
@@ -21,6 +21,7 @@ export const UploadDocModal = ({ objectCode, onClose }: { objectCode: string; on
   const [title, setTitle] = useState('');
   const [album, setAlbum] = useState('');
   const [variant, setVariant] = useState('');
+  const [block, setBlock] = useState('');
   const [createdDate, setCreatedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [driveUrl, setDriveUrl] = useState('');
   const [visible, setVisible] = useState(true);
@@ -79,6 +80,7 @@ export const UploadDocModal = ({ objectCode, onClose }: { objectCode: string; on
       clientHidden: !visible,
       driveUrl: driveUrl.trim() || undefined,
       storagePath,
+      block: block.trim() || undefined,
     };
     setSubmitting(true);
     const { error } = await addFile(archiveFile);
@@ -140,6 +142,9 @@ export const UploadDocModal = ({ objectCode, onClose }: { objectCode: string; on
           <SysLabeledField label="Альбом / версия" placeholder="напр. 03" value={album} onChange={(e: any) => setAlbum(e.target.value)} />
           <SysLabeledField label="Вариант" placeholder="напр. V5" value={variant} onChange={(e: any) => setVariant(e.target.value)} />
         </div>
+        {objectCode === ARCHIVE_BLOCK_FIELD_OBJECT_CODE && (
+          <SysLabeledField label="Блок" placeholder="напр. Блок А" value={block} onChange={(e: any) => setBlock(e.target.value)} />
+        )}
         <SysLabeledField
           label="Дата создания материала"
           type="date"

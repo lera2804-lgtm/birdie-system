@@ -29,6 +29,7 @@ interface FileRow {
   client_hidden: boolean;
   drive_url: string | null;
   storage_path: string | null;
+  block: string | null;
   created_at: string;
 }
 
@@ -39,6 +40,7 @@ interface MediaRow {
   item_date: string;
   drive_url: string | null;
   storage_path: string | null;
+  block: string | null;
 }
 
 const fileFromRow = (r: FileRow): ArchiveFile => ({
@@ -55,6 +57,7 @@ const fileFromRow = (r: FileRow): ArchiveFile => ({
   driveUrl: r.drive_url ?? undefined,
   storagePath: r.storage_path ?? undefined,
   fileUrl: r.storage_path ? publicUrl('documents', r.storage_path) : undefined,
+  block: r.block ?? undefined,
   insertedAt: r.created_at,
 });
 
@@ -66,6 +69,7 @@ const mediaFromRow = (r: MediaRow): MediaItem => ({
   driveUrl: r.drive_url ?? undefined,
   storagePath: r.storage_path ?? undefined,
   fileUrl: r.storage_path ? publicUrl('media', r.storage_path) : undefined,
+  block: r.block ?? undefined,
 });
 
 const keyFilesFrom = (allFiles: ArchiveFile[]): KeyFile[] =>
@@ -81,8 +85,8 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
   const load = async () => {
     setLoading(true);
     const [filesRes, mediaRes] = await Promise.all([
-      supabase.from('archive_files').select('id, type, name, album, variant, created_date, uploaded_date, is_key, key_status, client_hidden, drive_url, storage_path, created_at').eq('object_code', projectCode),
-      supabase.from('media_items').select('id, kind, name, item_date, drive_url, storage_path').eq('object_code', projectCode),
+      supabase.from('archive_files').select('id, type, name, album, variant, created_date, uploaded_date, is_key, key_status, client_hidden, drive_url, storage_path, block, created_at').eq('object_code', projectCode),
+      supabase.from('media_items').select('id, kind, name, item_date, drive_url, storage_path, block').eq('object_code', projectCode),
     ]);
     setAllFiles((filesRes.data ?? []).map(fileFromRow));
     setMedia((mediaRes.data ?? []).map(mediaFromRow));
@@ -107,6 +111,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
       client_hidden: !!file.clientHidden,
       drive_url: file.driveUrl ?? null,
       storage_path: file.storagePath ?? null,
+      block: file.block ?? null,
     });
     if (error) return { error: error.message };
     await load();
@@ -129,6 +134,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
     if (patch.clientHidden !== undefined) payload.client_hidden = patch.clientHidden;
     if ('driveUrl' in patch) payload.drive_url = patch.driveUrl ?? null;
     if (patch.type !== undefined) payload.type = patch.type;
+    if ('block' in patch) payload.block = patch.block ?? null;
     if ('storagePath' in patch) {
       payload.storage_path = patch.storagePath ?? null;
       // Replacing or removing the file shouldn't leave the old object
@@ -162,6 +168,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
       item_date: fromShortDate(item.date),
       drive_url: item.driveUrl ?? null,
       storage_path: item.storagePath ?? null,
+      block: item.block ?? null,
     });
     if (error) return { error: error.message };
     await load();
@@ -176,6 +183,7 @@ export const ArchiveProvider = ({ projectCode, children }: { projectCode: string
     if (patch.name !== undefined) payload.name = patch.name;
     if (patch.date !== undefined) payload.item_date = fromShortDate(patch.date);
     if ('driveUrl' in patch) payload.drive_url = patch.driveUrl ?? null;
+    if ('block' in patch) payload.block = patch.block ?? null;
     if ('storagePath' in patch) {
       payload.storage_path = patch.storagePath ?? null;
       if (current?.storagePath && current.storagePath !== patch.storagePath) {

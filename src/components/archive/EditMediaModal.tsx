@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { SysButton, SysLabeledField, SysModal, SysSelectField } from '../form';
 import { MonoLabel } from '../primitives';
 import { SYS } from '../../theme/tokens';
-import { fromShortDate, toShortDate, type MediaItem, type MediaKind } from '../../mocks/archive';
+import { ARCHIVE_BLOCK_FIELD_OBJECT_CODE, fromShortDate, toShortDate, type MediaItem, type MediaKind } from '../../mocks/archive';
 import { useArchive } from '../../state/ArchiveContext';
 import { useToasts } from '../../state/ToastContext';
 import { uploadMediaFile } from '../../lib/storage';
@@ -13,6 +13,7 @@ export const EditMediaModal = ({ item, objectCode, onClose }: { item: MediaItem;
   const fileRef = useRef<HTMLInputElement>(null);
   const [kind, setKind] = useState<MediaKind>(item.kind);
   const [name, setName] = useState(item.name);
+  const [block, setBlock] = useState(item.block ?? '');
   const [createdDate, setCreatedDate] = useState(fromShortDate(item.date));
   const [driveUrl, setDriveUrl] = useState(item.driveUrl ?? '');
   const [saving, setSaving] = useState(false);
@@ -53,6 +54,7 @@ export const EditMediaModal = ({ item, objectCode, onClose }: { item: MediaItem;
       name: name.trim(),
       date: toShortDate(createdDate),
       driveUrl: driveUrl.trim() || undefined,
+      block: block.trim() || undefined,
     };
 
     if (newFile) {
@@ -143,6 +145,9 @@ export const EditMediaModal = ({ item, objectCode, onClose }: { item: MediaItem;
           options={[{ value: 'Video', label: 'Video' }, { value: 'AR tour', label: 'AR tour' }, { value: '3D', label: '3D' }]}
         />
         <SysLabeledField label="Название" value={name} onChange={(e: any) => setName(e.target.value)} />
+        {objectCode === ARCHIVE_BLOCK_FIELD_OBJECT_CODE && (
+          <SysLabeledField label="Блок" placeholder="напр. Блок А" value={block} onChange={(e: any) => setBlock(e.target.value)} />
+        )}
         {!isVideoFile && (
           <SysLabeledField
             label="Ссылка на диск (опционально)"
